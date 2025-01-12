@@ -1,19 +1,16 @@
 import React, { useState } from "react";
-import AddCategory from "../../Components/Modals/AddCategory";
-import electronics from "../../assets/electronics.jpeg";
-import furniture from "../../assets/furniture.jpeg";
 import { IoEye } from "react-icons/io5";
 import { MdEdit } from "react-icons/md";
+import { mockCategories } from "../../../Components/Data/MockData";
+import { useNavigate } from "react-router-dom";
+import AddCategory from "../../../Components/Modals/Category/AddCategory";
 
 function Categories() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [categories, setCategories] = useState([
-    { id: 1, name: "Electronics", image: electronics, status: "active" },
-    { id: 2, name: "Furniture", image: furniture, status: "inactive" },
-  ]);
+  const [categories, setCategories] = useState(mockCategories);
 
   const [currentCategory, setCurrentCategory] = useState(null);
-
+  const navigate = useNavigate();
   const toggleModal = () => {
     setModalOpen(!modalOpen);
   };
@@ -44,11 +41,15 @@ function Categories() {
         category.id === id
           ? {
               ...category,
-              status: category.status === "active" ? "inactive" : "active", // Fixed here to toggle between 'active' and 'inactive'
+              status: category.status === "active" ? "inactive" : "active",
             }
           : category
       )
     );
+  };
+
+  const handleViewPage = () => {
+    navigate("/category/view");
   };
 
   return (
@@ -89,14 +90,16 @@ function Categories() {
           </thead>
           <tbody>
             {categories.map((category, index) => (
-              <tr key={category.id}  className={`${
-                index % 2 === 0 ? "bg-gray-50" : "bg-gray-100"
-              } hover:bg-gray-200 transition-colors duration-300`}
-            >
+              <tr
+                key={category.id}
+                className={`${
+                  index % 2 === 0 ? "bg-gray-50" : "bg-gray-100"
+                } hover:bg-gray-200 transition-colors duration-300`}
+              >
                 <td className="px-4 py-2">{index + 1}</td>
                 <td className="px-4 py-2">
                   <img
-                    src={category.image}
+                    src={category.image ||"https://picsum.photos/200/300?grayscale"}
                     alt={category.name}
                     className="w-12 h-12 object-cover rounded-3xl"
                   />
@@ -109,7 +112,7 @@ function Categories() {
                         ? "bg-primary-dark"
                         : "bg-[#cccccc]"
                     }`}
-                    onClick={() => handleToggleStatus(category.id)} 
+                    onClick={() => handleToggleStatus(category.id)}
                   >
                     <div
                       className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transform transition-transform duration-300 ${
@@ -125,7 +128,10 @@ function Categories() {
                   >
                     <MdEdit />
                   </button>
-                  <button className="bg-blue-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center">
+                  <button
+                    className="bg-blue-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center"
+                    onClick={() => handleViewPage(category)}
+                  >
                     <IoEye />
                   </button>
                 </td>

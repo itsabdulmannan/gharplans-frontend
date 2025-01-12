@@ -11,10 +11,19 @@ function Navbar() {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
+  const handlePageView = () => {
+    setIsDropdownOpen(false); // Close dropdown when navigating
+    navigate("/cms");
+  };
+
+  const handleProfileView = () => {
+    setIsDropdownOpen(false); // Close dropdown when navigating
+    navigate("/profile");
+  };
+
   const handleLogout = () => {
-    // Remove the auth token from localStorage
     localStorage.removeItem("authToken");
-    // Navigate to the login page
+    setIsDropdownOpen(false); // Close dropdown when logging out
     navigate("/login");
   };
 
@@ -31,7 +40,7 @@ function Navbar() {
   }, []);
 
   return (
-    <div className="flex justify-between items-center bg-primary-dark text-white h-20 px-4">
+    <div className="flex justify-between items-center bg-primary-dark text-white h-20 px-4 p-0">
       <div>
         <h1 className="text-3xl font-bold">Hello Admin</h1>
       </div>
@@ -66,20 +75,20 @@ function Navbar() {
           >
             <ul>
               <li>
-                <a
-                  href="/profile"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                <button
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  onClick={handlePageView}
                 >
-                  Profile
-                </a>
+                  Setting
+                </button>
               </li>
               <li>
-                <a
-                  href="/settings"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                <button
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  onClick={handleProfileView}
                 >
-                  Settings
-                </a>
+                  Profile
+                </button>
               </li>
               <li>
                 <button

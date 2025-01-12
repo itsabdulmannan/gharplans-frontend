@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from "react";
-import ProductModal from "../../Components/Modals/AddProducts";
+import ProductModal from "../../../Components/Modals/Products/AddProducts";
 import { IoEye } from "react-icons/io5";
 import { MdEdit } from "react-icons/md";
-import { mockCategories, mockProducts } from "../../Components/Data/MockData"; // Adjust the import path
+import { FaTrash } from "react-icons/fa"; // Import Trash Icon
+import {
+  mockCategories,
+  mockProducts,
+} from "../../../Components/Data/MockData";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function Products() {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [productToEdit, setProductToEdit] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Fetch categories and products from the mock data
     setCategories(mockCategories);
     setProducts(mockProducts);
   }, []);
@@ -34,6 +39,10 @@ function Products() {
     );
   };
 
+  const handleViewPage = () => {
+    navigate("/products/view");
+  };
+
   const handleToggleStatus = (id) => {
     setProducts((prevProducts) =>
       prevProducts.map((product) =>
@@ -45,6 +54,11 @@ function Products() {
           : product
       )
     );
+  };
+
+  const handleDelete = (id) => {
+    const filteredProducts = products.filter((product) => product.id !== id);
+    setProducts(filteredProducts);
   };
 
   return (
@@ -77,14 +91,30 @@ function Products() {
         <table className="min-w-full table-auto bg-white shadow-md rounded-lg overflow-hidden">
           <thead>
             <tr className="bg-gradient-to-r from-primary-dark to-primary-light text-white">
-              <th className="px-6 py-3 text-left text-sm font-semibold">Sr. No.</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Image</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Category</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Name</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Price</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Status</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Color</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Actions</th>
+              <th className="px-6 py-3 text-left text-sm font-semibold">
+                Sr. No.
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold">
+                Image
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold">
+                Category
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold">
+                Name
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold">
+                Price
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold">
+                Color
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -106,12 +136,18 @@ function Products() {
                 <td className="px-6 py-4 text-sm text-gray-600">
                   {product.categoryId.name}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-700">{product.name}</td>
-                <td className="px-6 py-4 text-sm text-gray-700">${product.price}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">
+                  {product.name}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-700">
+                  ${product.price}
+                </td>
                 <td className="px-6 py-4">
                   <div
                     className={`relative inline-block w-16 h-8 rounded-full transition-colors duration-300 cursor-pointer ${
-                      product.status === "Active" ? "bg-primary-dark" : "bg-[#cccccc]"
+                      product.status === "Active"
+                        ? "bg-primary-dark"
+                        : "bg-[#cccccc]"
                     }`}
                     onClick={() => handleToggleStatus(product.id)}
                   >
@@ -122,15 +158,20 @@ function Products() {
                     ></div>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-700">{product.color}</td>
+                <td className="px-6 py-4 text-sm text-gray-700">
+                  {product.color}
+                </td>
                 <td className="px-6 py-4 flex space-x-4">
                   <button
-                    className="bg-primary-dark text-white py-2 px-4 rounded-lg shadow-md flex items-center"
-                    onClick={() => editProduct(product.id)}
+                    className="bg-red-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center"
+                    onClick={() => handleDelete(product.id)}
                   >
-                    <MdEdit />
+                    <FaTrash />
                   </button>
-                  <button className="bg-blue-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center">
+                  <button
+                    className="bg-blue-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center"
+                    onClick={handleViewPage}
+                  >
                     <IoEye />
                   </button>
                 </td>

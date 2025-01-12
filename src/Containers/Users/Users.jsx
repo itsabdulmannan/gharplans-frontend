@@ -1,34 +1,10 @@
 import React, { useState } from "react";
 import { IoEye } from "react-icons/io5";
-
-const mockUsers = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    image: "user1.jpg", // Assuming image paths
-    address: "123 Main St, City, Country",
-    status: "Active",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    image: "user2.jpg",
-    address: "456 Elm St, Town, Country",
-    status: "Inactive",
-  },
-  {
-    id: "3",
-    name: "Michael Brown",
-    email: "michael.brown@example.com",
-    image: "user3.jpg",
-    address: "789 Oak St, Village, Country",
-    status: "Active",
-  },
-];
+import { useNavigate } from "react-router-dom";
+import { mockUsers } from "../../Components/Data/MockData";
 
 function Users() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [filteredUsers, setFilteredUsers] = useState(mockUsers);
@@ -49,16 +25,17 @@ function Users() {
   };
 
   const handleShowDetails = (user) => {
-    alert(
-      `User Details:\nName: ${user.name}\nEmail: ${user.email}\nAddress: ${user.address}`
-    );
+    navigate("/users/view", { state: user });
   };
 
   const handleToggleStatus = (id) => {
     setFilteredUsers((prevUsers) =>
       prevUsers.map((user) =>
         user.id === id
-          ? { ...user, status: user.status === "Active" ? "Inactive" : "Active" }
+          ? {
+              ...user,
+              status: user.status === "Active" ? "Inactive" : "Active",
+            }
           : user
       )
     );
@@ -71,7 +48,7 @@ function Users() {
       </div>
 
       <div className="mt-4">
-        <div className="flex items-center space-x-4 mb-6">
+        <div className="bg-white p-4 rounded-md shadow-md mb-6 flex gap-4 mt-4">
           <input
             type="text"
             className="w-[40%] flex-grow px-4 py-2 border rounded-lg"
@@ -84,18 +61,20 @@ function Users() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="">Select Status</option>
+            <option value="" className="opacity-25">
+              Select Status
+            </option>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
           </select>
           <button
-            className="w-[20%] bg-blue-500 text-white py-2 px-4 rounded"
+            className="w-full sm:w-[45%] md:w-60 bg-blue-500 text-white px-4 py-2 rounded-md"
             onClick={handleSearch}
           >
             Search
           </button>
           <button
-            className="w-[20%] bg-gray-300 text-black py-2 px-4 rounded"
+            className="w-full sm:w-[45%] md:w-60 bg-primary-dark text-white px-4 py-2 rounded-md"
             onClick={handleReset}
           >
             Reset
@@ -153,7 +132,9 @@ function Users() {
                   <td className="px-6 py-4">
                     <div
                       className={`relative inline-block w-16 h-8 rounded-full transition-colors duration-300 cursor-pointer ${
-                        user.status === "Active" ? "bg-primary-dark" : "bg-[#cccccc]"
+                        user.status === "Active"
+                          ? "bg-primary-dark"
+                          : "bg-[#cccccc]"
                       }`}
                       onClick={() => handleToggleStatus(user.id)}
                     >
@@ -166,7 +147,7 @@ function Users() {
                   </td>
                   <td className="px-6 py-4 flex space-x-4">
                     <button
-                      className="bg-primary-dark text-white py-2 px-4 rounded-lg shadow-md flex items-center"
+                      className="bg-blue-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center hover:bg-blue-600"
                       onClick={() => handleShowDetails(user)}
                     >
                       <IoEye />

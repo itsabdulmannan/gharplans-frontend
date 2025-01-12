@@ -11,7 +11,6 @@ import {
   Legend,
 } from "chart.js";
 
-// Register chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -71,7 +70,7 @@ function Dashboard() {
 
   return (
     <>
-      <div className="bg-gray-100 p-4 flex justify-between">
+      <div className="bg-gray-100 p-3 flex justify-between">
         <h2 className="text-2xl font-bold">Dashboard</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-4">
