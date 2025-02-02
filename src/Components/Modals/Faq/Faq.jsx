@@ -4,7 +4,6 @@ import { IoClose } from "react-icons/io5";
 function ModalFaqManagement({ show, close, handleSave, settingData }) {
   const [content, setContent] = useState(settingData ? settingData.content : "");
 
-  // Reset content when the modal is closed
   useEffect(() => {
     if (!show) {
       setContent(settingData ? settingData.content : "");
@@ -13,7 +12,7 @@ function ModalFaqManagement({ show, close, handleSave, settingData }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    handleSave(content); // Handle the saving logic
+    handleSave(content); 
     close();
   };
 
@@ -22,7 +21,6 @@ function ModalFaqManagement({ show, close, handleSave, settingData }) {
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white p-8 rounded-lg w-1/2 max-h-[80vh] relative overflow-hidden">
-        {/* Close Button */}
         <button
           className="absolute top-4 right-4 text-black"
           onClick={close}
@@ -33,7 +31,6 @@ function ModalFaqManagement({ show, close, handleSave, settingData }) {
         <h3 className="text-xl font-bold mt-2">Edit FAQ Management</h3>
 
         <form onSubmit={handleSubmit} className="h-full">
-          {/* Title Input */}
           <div className="mt-4">
             <label className="block">Title</label>
             <input
@@ -44,7 +41,6 @@ function ModalFaqManagement({ show, close, handleSave, settingData }) {
             />
           </div>
 
-          {/* Content Textarea */}
           <div className="mt-4 max-h-[400px] overflow-y-auto">
             <label className="block">Content</label>
             <textarea
@@ -55,7 +51,6 @@ function ModalFaqManagement({ show, close, handleSave, settingData }) {
             />
           </div>
 
-          {/* Action Buttons */}
           <div className="mt-4 flex justify-end">
             <button
               type="button"

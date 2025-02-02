@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { IoClose } from "react-icons/io5";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { IoClose } from "react-icons/io5";
 
 function ModalTermsAndConditions({ show, close, handleSave, settingData }) {
   const [content, setContent] = useState(
     settingData ? settingData.content : ""
   );
 
-  // Reset content when the modal is closed
   useEffect(() => {
     if (!show) {
       setContent(settingData ? settingData.content : "");
@@ -17,7 +16,7 @@ function ModalTermsAndConditions({ show, close, handleSave, settingData }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    handleSave(content);
+    handleSave(content, settingData?.isNew, settingData?.id);
     close();
   };
 
@@ -30,7 +29,11 @@ function ModalTermsAndConditions({ show, close, handleSave, settingData }) {
           <IoClose className="w-6 h-6" />
         </button>
 
-        <h3 className="text-xl font-bold mt-2">Edit Terms & Conditions</h3>
+        <h3 className="text-xl font-bold mt-2">
+          {settingData?.isNew
+            ? "Add Terms & Conditions"
+            : "Edit Terms & Conditions"}
+        </h3>
 
         <form onSubmit={handleSubmit} className="h-full">
           <div className="mt-4">

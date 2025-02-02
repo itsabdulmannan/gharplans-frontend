@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { useDashboardStats } from "./useHook";
 
 ChartJS.register(
   CategoryScale,
@@ -22,6 +23,11 @@ ChartJS.register(
 );
 
 function Dashboard() {
+  const { getStats } = useDashboardStats();
+  const [dashboardStatsData, setDashboardStataData] = useState(null);
+  useEffect(() => {
+    getStats(setDashboardStataData);
+  }, []);
   const data = {
     labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
     datasets: [
@@ -76,19 +82,25 @@ function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-4">
         <div className="bg-white shadow-md rounded-lg p-4 flex flex-col items-center">
           <h2 className="text-lg font-semibold text-gray-600">Total Users</h2>
-          <p className="text-3xl font-bold text-blue-500">1,024</p>
+          <p className="text-3xl font-bold text-blue-500">
+            {dashboardStatsData?.userCount || "--"}
+          </p>
         </div>
 
         <div className="bg-white shadow-md rounded-lg p-4 flex flex-col items-center">
           <h2 className="text-lg font-semibold text-gray-600">Total Orders</h2>
-          <p className="text-3xl font-bold text-green-500">542</p>
+          <p className="text-3xl font-bold text-green-500">
+            {dashboardStatsData?.orderCount || "--"}
+          </p>
         </div>
 
         <div className="bg-white shadow-md rounded-lg p-4 flex flex-col items-center">
           <h2 className="text-lg font-semibold text-gray-600">
             Total Products
           </h2>
-          <p className="text-3xl font-bold text-purple-500">312</p>
+          <p className="text-3xl font-bold text-purple-500">
+            {dashboardStatsData?.productCount || "--"}
+          </p>
         </div>
       </div>
       <div className="bg-white shadow-md rounded-lg p-6 overflow-hidden">

@@ -1,11 +1,17 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { mockProducts } from "../../../Components/Data/MockData";
 import DiscountModal from "../../../Components/Modals/DiscounTier/DiscountTier";
+import { useLocation } from "react-router-dom";
+import Swal from "sweetalert2";
+import { useDiscountTier } from "./useHook";
 
 const ProductDetails = () => {
+  const { showOnHomeScreen, getProductData } = useDiscountTier();
+  const [productData, setProductData] = useState(null);
+  const location = useLocation();
+  const { id } = location?.state;
   const [formData, setFormData] = useState({ ...mockProducts });
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -13,12 +19,37 @@ const ProductDetails = () => {
       [name]: value,
     });
   };
-
+  useEffect(() => {
+    getProductData(id, setProductData);
+  }, []);
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     setFormData({
       ...formData,
       [name]: files[0],
+    });
+  };
+
+  const handleHomeScreenProduct = (homePageValue) => {
+    console.log(homePageValue);
+    Swal.fire({
+      title: "Are you sure?",
+      text: `Do you want to ${
+        homePageValue === 1 ? "show" : "remove"
+      } this product on the home screen?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: `Yes, ${homePageValue === 1 ? "show" : "remove"} it!`,
+      cancelButtonText: "No, keep it off",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const newHomeScreenStatus = homePageValue === 1 ? "yes" : "no";
+        setFormData({
+          ...formData,
+          homeScreen: newHomeScreenStatus,
+        });
+        showOnHomeScreen(id, homePageValue);
+      }
     });
   };
 
@@ -40,7 +71,6 @@ const ProductDetails = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Updated Product:", formData);
   };
 
   const handleAddDiscountDetail = () => {
@@ -50,17 +80,27 @@ const ProductDetails = () => {
   const closeDiscountModal = () => {
     setIsDiscountModalOpen(false);
   };
-
+  console.log(productData);
   return (
     <>
       <div className="bg-gray-100 p-4 flex justify-between">
-        <h2 className="text-2xl font-bold mb-1">View or EditProducts</h2>
-        <button
-          className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-          onClick={handleAddDiscountDetail}
-        >
-          Add Discount Detail
-        </button>
+        <h2 className="text-2xl font-bold mb-1">View or Edit Products</h2>
+        <div className="flex space-x-4">
+          <button
+            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+            onClick={() =>
+              handleHomeScreenProduct(productData.homeScreen ? 0 : 1)
+            }
+          >
+            {productData ? "Remove from Home Screen" : "Add to Home Screen"}
+          </button>
+          <button
+            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+            onClick={handleAddDiscountDetail}
+          >
+            Add Discount Detail
+          </button>
+        </div>
       </div>
       <div className="max-w-6xl mx-auto p-6 bg-gradient-to-r from-white to-gray-100 shadow-md rounded-lg">
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -198,11 +238,13 @@ const ProductDetails = () => {
           </button>
         </form>
       </div>
-      <DiscountModal
-        isOpen={isDiscountModalOpen}
-        onClose={closeDiscountModal}
-        productId={formData.productId}
-      />
+      {isDiscountModalOpen && (
+        <DiscountModal
+          isOpen={isDiscountModalOpen}
+          onClose={closeDiscountModal}
+          productId={id}
+        />
+      )}
     </>
   );
 };

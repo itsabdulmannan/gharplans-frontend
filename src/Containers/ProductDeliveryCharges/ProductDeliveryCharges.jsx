@@ -1,41 +1,34 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { MdDelete, MdEdit } from "react-icons/md";
+import { useDeliveryCharges } from "./useHook";
+import Swal from "sweetalert2";
 
 function ProductDeliveryCharges() {
-  const [deliveryCharges, setDeliveryCharges] = useState([
-    {
-      sourceCity: "New York",
-      destinationCity: "Los Angeles",
-      product: "Product A",
-      price: "50",
-    },
-    {
-      sourceCity: "Chicago",
-      destinationCity: "New York",
-      product: "Product B",
-      price: "30",
-    },
-  ]);
+  const {
+    addProductDeliveryCharges,
+    getCities,
+    getProductDeliveryCharges,
+    getProducts,
+    deleteProductDeliveryCharges,
+    editProductDeliveryCharges,
+  } = useDeliveryCharges();
+  const [cities, setCities] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [deliveryCharges, setDeliveryCharges] = useState({});
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
-  const [deleteIndex, setDeleteIndex] = useState(null);
-
   const [sourceCity, setSourceCity] = useState("");
   const [destinationCity, setDestinationCity] = useState("");
   const [product, setProduct] = useState("");
   const [price, setPrice] = useState("");
 
-  const cities = ["New York", "Los Angeles", "Chicago"];
-  const products = ["Product A", "Product B", "Product C"];
-
   const openModal = (index = null) => {
     if (index !== null) {
       const charge = deliveryCharges[index];
-      setSourceCity(charge.sourceCity);
-      setDestinationCity(charge.destinationCity);
-      setProduct(charge.product);
-      setPrice(charge.price);
+      setSourceCity(charge.sourceCityId || ""); // Use sourceCityId to ensure proper pre-selection
+      setDestinationCity(charge.destinationCityId || ""); // Use destinationCityId to ensure proper pre-selection
+      setProduct(charge.product?.id || ""); // Set product ID for proper selection
+      setPrice(charge.price || ""); // Set the price value
       setEditIndex(index);
     } else {
       setSourceCity("");
@@ -45,50 +38,158 @@ function ProductDeliveryCharges() {
     }
     setIsModalOpen(true);
   };
+  
+
+  useEffect(() => {
+    getCities(setCities);
+    getProducts(setProducts);
+    getProductDeliveryCharges(setDeliveryCharges);
+  }, []);
 
   const closeModal = () => {
     setIsModalOpen(false);
     setEditIndex(null);
   };
 
-  const openDeleteModal = (index) => {
-    setDeleteIndex(index);
-    setIsDeleteModalOpen(true);
-  };
-
-  const closeDeleteModal = () => {
-    setIsDeleteModalOpen(false);
-    setDeleteIndex(null);
-  };
-
-  const addOrEditDeliveryCharge = () => {
+  const addOrEditDeliveryCharge = async () => {
     if (sourceCity && destinationCity && product && price) {
+      const payload = {
+        sourceCityId: sourceCity,
+        destinationCityId: destinationCity,
+        productId: product,
+        price,
+      };
+
       if (editIndex !== null) {
-        const updatedCharges = [...deliveryCharges];
-        updatedCharges[editIndex] = {
-          sourceCity,
-          destinationCity,
-          product,
-          price,
-        };
-        setDeliveryCharges(updatedCharges);
+        // Editing an existing delivery charge
+        const chargeToEdit = deliveryCharges[editIndex];
+        try {
+          const response = await editProductDeliveryCharges(
+            chargeToEdit.id,
+            payload
+          );
+          if (response?.status === 200) {
+            const updatedCharge = {
+              ...response.data,
+              sourceCity: cities.find(
+                (city) => city.id === response.data.sourceCityId
+              ).name,
+              destinationCity: cities.find(
+                (city) => city.id === response.data.destinationCityId
+              ).name,
+              product: products.find(
+                (prod) => prod.id === response.data.productId
+              ),
+            };
+
+            setDeliveryCharges((prev) => {
+              const updatedCharges = [...prev];
+              updatedCharges[editIndex] = updatedCharge;
+              return updatedCharges;
+            });
+
+            Swal.fire(
+              "Success!",
+              "Delivery charge updated successfully.",
+              "success"
+            );
+          } else {
+            Swal.fire(
+              "Error!",
+              "Failed to update the delivery charge.",
+              "error"
+            );
+          }
+        } catch (error) {
+          Swal.fire(
+            "Error!",
+            error.message || "Something went wrong.",
+            "error"
+          );
+        }
       } else {
-        setDeliveryCharges([
-          ...deliveryCharges,
-          { sourceCity, destinationCity, product, price },
-        ]);
+        // Adding a new delivery charge
+        try {
+          const response = await addProductDeliveryCharges(payload);
+          if (response?.data) {
+            const newCharge = {
+              ...response.data,
+              sourceCity: cities.find(
+                (city) => city.id === response.data.sourceCityId
+              ).name,
+              destinationCity: cities.find(
+                (city) => city.id === response.data.destinationCityId
+              ).name,
+              product: products.find(
+                (prod) => prod.id === response.data.productId
+              ),
+            };
+            setDeliveryCharges([...deliveryCharges, newCharge]);
+            Swal.fire(
+              "Success!",
+              "Delivery charge added successfully.",
+              "success"
+            );
+          }
+        } catch (error) {
+          Swal.fire(
+            "Error!",
+            error.message || "Something went wrong.",
+            "error"
+          );
+        }
       }
       closeModal();
+    } else {
+      Swal.fire("Error!", "Please fill in all fields.", "error");
     }
   };
 
-  const deleteDeliveryCharge = () => {
-    if (deleteIndex !== null) {
-      setDeliveryCharges(
-        deliveryCharges.filter((_, index) => index !== deleteIndex)
-      );
-      closeDeleteModal();
-    }
+  const deleteDeliveryCharge = async (index) => {
+    const chargeToDelete = deliveryCharges[index];
+
+    Swal.fire({
+      title: "Are you sure?",
+      text: `Do you really want to delete the delivery charge for ${
+        chargeToDelete.product?.name || "this item"
+      }?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+      allowOutsideClick: false,
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await deleteProductDeliveryCharges(
+            chargeToDelete.id
+          );
+
+          if (response?.status === 200) {
+            Swal.fire(
+              "Deleted!",
+              "The delivery charge has been deleted.",
+              "success"
+            );
+            setDeliveryCharges((prev) => prev.filter((_, i) => i !== index));
+            getProductDeliveryCharges(setDeliveryCharges);
+          } else {
+            Swal.fire(
+              "Error!",
+              "Failed to delete the delivery charge.",
+              "error"
+            );
+          }
+        } catch (error) {
+          Swal.fire(
+            "Error!",
+            error.message || "Something went wrong.",
+            "error"
+          );
+        }
+      }
+    });
   };
 
   return (
@@ -104,12 +205,8 @@ function ProductDeliveryCharges() {
       </div>
       <div className="bg-gray-50">
         <div className="min-w-full table-auto bg-white shadow-md rounded-lg overflow-hidden">
-          {/* Delivery Charges Table */}
           {deliveryCharges.length > 0 ? (
             <div>
-              {/* <h2 className="text-xl font-semibold text-gray-700 mb-4">
-                Delivery Charges List
-              </h2> */}
               <table className="w-full border-collapse bg-white shadow-md rounded-lg overflow-hidden mt-5">
                 <thead>
                   <tr className="bg-gradient-to-r from-primary-dark to-primary-light text-white">
@@ -143,24 +240,24 @@ function ProductDeliveryCharges() {
                         {charge.destinationCity}
                       </td>
                       <td className="px-6 py-3 text-gray-800">
-                        {charge.product}
+                        {charge.product?.name || "Unknown Product"}
                       </td>
                       <td className="px-6 py-3 text-gray-800">
-                        ${charge.price}
+                        ${charge.deliveryCharge || "N/A"}
                       </td>
                       <td className="px-6 py-3 text-gray-800 flex space-x-2">
                         <button
-                          onClick={() => openDeleteModal(index)}
+                          onClick={() => deleteDeliveryCharge(index)}
                           className="bg-red-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center"
                         >
                           <MdDelete />
                         </button>
-                        <button
+                        {/* <button
                           className="bg-primary-dark text-white py-2 px-4 rounded-lg shadow-md flex items-center"
                           onClick={() => openModal(index)}
                         >
                           <MdEdit />
-                        </button>
+                        </button> */}
                       </td>
                     </tr>
                   ))}
@@ -172,7 +269,6 @@ function ProductDeliveryCharges() {
           )}
         </div>
 
-        {/* Add/Edit Delivery Charge Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-lg">
@@ -182,46 +278,44 @@ function ProductDeliveryCharges() {
                   : "Add Delivery Charge"}
               </h2>
               <div className="space-y-4">
-                {/* Source City */}
                 <select
                   value={sourceCity}
                   onChange={(e) => setSourceCity(e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   <option value="">Select Source City</option>
-                  {cities.map((city, index) => (
-                    <option key={index} value={city}>
-                      {city}
+                  {cities.map((city) => (
+                    <option key={city.id} value={city.id}>
+                      {city.name}
                     </option>
                   ))}
                 </select>
-                {/* Destination City */}
+
                 <select
                   value={destinationCity}
                   onChange={(e) => setDestinationCity(e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   <option value="">Select Destination City</option>
-                  {cities.map((city, index) => (
-                    <option key={index} value={city}>
-                      {city}
+                  {cities.map((city) => (
+                    <option key={city.id} value={city.id}>
+                      {city.name}
                     </option>
                   ))}
                 </select>
-                {/* Product */}
+
                 <select
                   value={product}
                   onChange={(e) => setProduct(e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   <option value="">Select Product</option>
-                  {products.map((prod, index) => (
-                    <option key={index} value={prod}>
-                      {prod}
+                  {products.map((prod) => (
+                    <option key={prod.id} value={prod.id}>
+                      {prod.name}
                     </option>
                   ))}
                 </select>
-                {/* Price */}
                 <input
                   type="number"
                   value={price}
@@ -242,31 +336,6 @@ function ProductDeliveryCharges() {
                   className="px-4 py-2 rounded-lg shadow-md bg-green-500 text-white hover:bg-green-600"
                 >
                   {editIndex !== null ? "Save Changes" : "Add"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Confirmation Modal */}
-        {isDeleteModalOpen && (
-          <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-sm">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                Are you sure you want to delete this item?
-              </h2>
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={closeDeleteModal}
-                  className="px-4 py-2 rounded-lg shadow-md text-gray-700 border border-gray-300 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={deleteDeliveryCharge}
-                  className="px-4 py-2 rounded-lg shadow-md bg-red-500 text-white hover:bg-red-600"
-                >
-                  Delete
                 </button>
               </div>
             </div>

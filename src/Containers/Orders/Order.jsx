@@ -1,33 +1,51 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IoEye } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import { useOrders } from "./useHook";
 
 function Order() {
+  const { getORders } = useOrders();
   const navigate = useNavigate();
-  const data = [
-    { id: 1, userName: "John Doe", items: 3, status: "Delivered" },
-    { id: 2, userName: "Jane Smith", items: 5, status: "Pending" },
-    { id: 3, userName: "Alice Johnson", items: 2, status: "Cancelled" },
-  ];
 
   const [searchName, setSearchName] = useState("");
   const [searchOrderId, setSearchOrderId] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
-  const [filteredData, setFilteredData] = useState(data);
+  const [filteredData, setFilteredData] = useState([]);
+  const [orderData, setOrderData] = useState([]);
 
-  const handleSearch = () => {
-    const filtered = data.filter(
-      (row) =>
-        row.userName.toLowerCase().includes(searchName.toLowerCase()) &&
-        row.id.toString().includes(searchOrderId) &&
-        row.status.toLowerCase().includes(searchStatus.toLowerCase())
-    );
-    setFilteredData(filtered);
+  useEffect(() => {
+    fetchOrderData();
+  }, []);
+
+  const fetchOrderData = async () => {
+    try {
+      const response = await getORders(setOrderData);
+      setOrderData(response.data.ordersData);
+      setFilteredData(response.data.ordersData);
+    } catch (error) {
+      console.error("Error fetching order data:", error);
+    }
+  };
+
+  const handleSearch = async () => {
+    try {
+      const params = {
+        name: searchName,
+        orderId: searchOrderId,
+        status: searchStatus,
+      };
+      const response = await getORders(setOrderData, params);
+      setFilteredData(response.data.ordersData);
+    } catch (error) {
+      console.error("Error performing search:", error);
+    }
   };
 
   const handlePageView = (orderId) => {
-    navigate(`/orders/invoice`);
+    console.log(orderId);
+    navigate(`/orders/invoice`, { state: { orderId } });
   };
+
   const handleVerifyPaymentPageView = () => {
     navigate(`/orders/verify-payment`);
   };
@@ -36,7 +54,8 @@ function Order() {
     setSearchName("");
     setSearchOrderId("");
     setSearchStatus("");
-    setFilteredData(data);
+    setFilteredData(orderData);
+    fetchOrderData();
   };
 
   return (
@@ -60,22 +79,22 @@ function Order() {
             onChange={(e) => setSearchName(e.target.value)}
             className="w-full sm:w-[45%] md:w-80 px-4 py-2 border rounded-lg"
           />
-          <input
+          {/* <input
             type="text"
             placeholder="Search by Order ID"
             value={searchOrderId}
             onChange={(e) => setSearchOrderId(e.target.value)}
             className="w-full sm:w-[45%] md:w-80 px-4 py-2 border rounded-lg"
-          />
+          /> */}
           <select
             value={searchStatus}
             onChange={(e) => setSearchStatus(e.target.value)}
             className="w-full sm:w-[45%] md:w-80 px-4 py-2 border rounded-lg"
           >
             <option value="">Search by Status</option>
-            <option value="Delivered">Delivered</option>
-            <option value="Pending">Pending</option>
-            <option value="Cancelled">Cancelled</option>
+            <option value="approved">Approved</option>
+            <option value="pending">Pending</option>
+            <option value="rejected">Rejected</option>
           </select>
           <button
             onClick={handleSearch}
@@ -92,7 +111,6 @@ function Order() {
         </div>
 
         <div className="bg-gray-100">
-          {/* Table */}
           <div className="overflow-x-auto mt-6">
             <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
               <thead>
@@ -112,12 +130,16 @@ function Order() {
                       className="border-t border-gray-200 hover:bg-gray-50"
                     >
                       <td className="p-4">{index + 1}</td>
-                      <td className="p-4">{row.userName}</td>
-                      <td className="p-4">{row.items}</td>
+                      <td className="p-4">
+                        {row.user
+                          ? `${row.user.firstName} ${row.user.lastName}`
+                          : "User info not available"}
+                      </td>
+                      <td className="p-4">{row.totalItemsPurchased}</td>
                       <td className="p-4">{row.status}</td>
                       <td className="p-4">
                         <button
-                          onClick={() => handlePageView(row.id)}
+                          onClick={() => handlePageView(row.orderId)}
                           className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600"
                         >
                           <IoEye />
@@ -128,7 +150,7 @@ function Order() {
                 ) : (
                   <tr>
                     <td
-                      colSpan="4"
+                      colSpan="5"
                       className="p-4 text-center text-gray-500 italic"
                     >
                       No matching records found

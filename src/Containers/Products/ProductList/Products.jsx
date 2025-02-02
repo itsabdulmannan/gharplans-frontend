@@ -1,15 +1,20 @@
+// Products.js
 import React, { useState, useEffect } from "react";
 import ProductModal from "../../../Components/Modals/Products/AddProducts";
 import { IoEye } from "react-icons/io5";
-import { MdEdit } from "react-icons/md";
-import { FaTrash } from "react-icons/fa"; // Import Trash Icon
-import {
-  mockCategories,
-  mockProducts,
-} from "../../../Components/Data/MockData";
+import { FaTrash } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useProducts } from "./useHook";
+import Swal from "sweetalert2";
 
 function Products() {
+  const {
+    getCategories,
+    getProducts,
+    updateProductStatus,
+    deleteProduct,
+    addProduct,
+  } = useProducts();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -17,63 +22,137 @@ function Products() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setCategories(mockCategories);
-    setProducts(mockProducts);
+    getCategories(setCategories);
+    getProducts(setProducts);
   }, []);
 
-  const addProduct = (productData) => {
-    setProducts([...products, productData]);
+  const handleAddProduct = async (productData) => {
+    try {
+      const response = await addProduct(productData);
+
+      if (response) {
+        setProducts([...products, response]);
+        Swal.fire({
+          title: "Success",
+          text: "Product has been added successfully.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: error.message || "Failed to add product.",
+        icon: "error",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    }
   };
 
-  const editProduct = (productId) => {
-    const productToEdit = products.find((product) => product.id === productId);
-    setProductToEdit(productToEdit);
-    setShowModal(true);
+  const handleViewPage = (id) => {
+    navigate("/products/view", { state: { id } });
+  };
+  const handleQuotationPageView = () => {
+    navigate("/quotation");
   };
 
-  const handleProductUpdate = (updatedProduct) => {
-    setProducts(
-      products.map((product) =>
-        product.id === updatedProduct.id ? updatedProduct : product
-      )
-    );
+  const handleToggleStatus = async (id, currentStatus) => {
+    try {
+      const newStatus = !currentStatus;
+      const response = await updateProductStatus(id, newStatus);
+
+      if (response) {
+        setProducts((prevProducts) =>
+          prevProducts.map((product) =>
+            product.id === id ? { ...product, status: newStatus } : product
+          )
+        );
+
+        Swal.fire({
+          title: "Success",
+          text: `Product status has been ${
+            newStatus ? "activated" : "deactivated"
+          } successfully!`,
+          icon: "success",
+          timer: 1000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: error.message || "Failed to update product status.",
+        icon: "error",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+    }
   };
 
-  const handleViewPage = () => {
-    navigate("/products/view");
-  };
+  const handleDelete = async (id) => {
+    try {
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+      });
 
-  const handleToggleStatus = (id) => {
-    setProducts((prevProducts) =>
-      prevProducts.map((product) =>
-        product.id === id
-          ? {
-              ...product,
-              status: product.status === "Active" ? "Inactive" : "Active",
-            }
-          : product
-      )
-    );
-  };
+      if (result.isConfirmed) {
+        const response = await deleteProduct(id);
+        if (response) {
+          setProducts((prevProducts) =>
+            prevProducts.filter((product) => product.id !== id)
+          );
 
-  const handleDelete = (id) => {
-    const filteredProducts = products.filter((product) => product.id !== id);
-    setProducts(filteredProducts);
+          Swal.fire({
+            title: "Deleted!",
+            text: "The product has been deleted successfully.",
+            icon: "success",
+            timer: 1500,
+            showConfirmButton: false,
+          });
+        }
+      }
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: "Failed to delete the product. Please try again.",
+        icon: "error",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    }
   };
 
   return (
     <div>
       <div className="bg-gray-100 p-4 flex justify-between">
         <h2 className="text-2xl font-bold">Products</h2>
-        <button
-          className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-          onClick={() => {
-            setProductToEdit(null);
-            setShowModal(true);
-          }}
-        >
-          Add Product
-        </button>
+        <div className="flex space-x-4">
+          <button
+            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+            onClick={handleQuotationPageView}
+          >
+            Get Quotation
+          </button>
+          <button
+            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+            onClick={() => {
+              setProductToEdit(null);
+              setShowModal(true);
+            }}
+          >
+            Add Product
+          </button>
+        </div>
       </div>
 
       {categories.length > 0 && (
@@ -81,9 +160,8 @@ function Products() {
           categories={categories}
           showModal={showModal}
           setShowModal={setShowModal}
-          addProduct={addProduct}
+          addProduct={handleAddProduct}
           productToEdit={productToEdit}
-          handleProductUpdate={handleProductUpdate}
         />
       )}
 
@@ -134,7 +212,7 @@ function Products() {
                   />
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600">
-                  {product.categoryId.name}
+                  {product.category?.name || "N/A"}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-700">
                   {product.name}
@@ -145,32 +223,26 @@ function Products() {
                 <td className="px-6 py-4">
                   <div
                     className={`relative inline-block w-16 h-8 rounded-full transition-colors duration-300 cursor-pointer ${
-                      product.status === "Active"
-                        ? "bg-primary-dark"
-                        : "bg-[#cccccc]"
+                      product.status ? "bg-primary-dark" : "bg-[#cccccc]"
                     }`}
-                    onClick={() => handleToggleStatus(product.id)}
+                    onClick={() =>
+                      handleToggleStatus(product.id, product.status)
+                    }
                   >
                     <div
                       className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transform transition-transform duration-300 ${
-                        product.status === "Active" ? "translate-x-8" : ""
+                        product.status ? "translate-x-8" : ""
                       }`}
                     ></div>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-700">
-                  {product.color}
+                  {product.colors[0]?.color || "N/A"}
                 </td>
                 <td className="px-6 py-4 flex space-x-4">
                   <button
-                    className="bg-red-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center"
-                    onClick={() => handleDelete(product.id)}
-                  >
-                    <FaTrash />
-                  </button>
-                  <button
                     className="bg-blue-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center"
-                    onClick={handleViewPage}
+                    onClick={() => handleViewPage(product.id)}
                   >
                     <IoEye />
                   </button>

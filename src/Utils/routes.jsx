@@ -9,6 +9,9 @@ import { IoCartOutline } from "react-icons/io5";
 import { RiProductHuntLine } from "react-icons/ri";
 import { AiOutlineBank } from "react-icons/ai";
 import { CiLink } from "react-icons/ci";
+import { FaCity } from "react-icons/fa";
+import { MdOutlineCategory } from "react-icons/md";
+import { LuTextQuote } from "react-icons/lu";
 import Dashboard from "../Containers/Dashboard/Dashboard.jsx";
 import Products from "../Containers/Products/ProductList/Products.jsx";
 import Categories from "../Containers/Categories/CategoriesList/Categories.jsx";
@@ -26,6 +29,8 @@ import BankAccount from "../Containers/BankAccount/BankAccount.jsx";
 import VerifyPayments from "../Containers/Orders/VerifyPayments/VerifyPayments.jsx";
 import UtmLinks from "../Containers/UtmLinks/UtmLinks.jsx";
 import Profile from "../Containers/Profile/Profile.jsx";
+import Cities from "../Containers/Cities/Cities.jsx";
+import QuotationPage from "../Containers/Quotation/QuotationPage.jsx";
 
 const routes = [
   {
@@ -43,7 +48,7 @@ const routes = [
     path: "/category",
     element: Categories,
     label: "Category",
-    icon: <IoHomeOutline size={30} />,
+    icon: <MdOutlineCategory size={30} />,
     visible: true,
   },
   {
@@ -65,6 +70,12 @@ const routes = [
     element: Products,
     label: "Products",
     icon: <RiProductHuntLine size={30} />,
+  },
+  {
+    path: "/quotation",
+    element: QuotationPage,
+    label: "Generate Quotation",
+    icon: <LuTextQuote size={30} />,
   },
   {
     path: "/products/view",
@@ -123,6 +134,12 @@ const routes = [
     element: ProductDeliveryCharges,
     label: "Add Product Delivery Charges",
     icon: <CiDeliveryTruck size={30} />,
+  },
+  {
+    path: "/cities",
+    element: Cities,
+    label: "Add Cities",
+    icon: <FaCity size={30} />,
   },
   // {
   //   path: "/feature-product",

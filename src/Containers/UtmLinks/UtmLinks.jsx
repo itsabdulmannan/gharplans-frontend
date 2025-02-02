@@ -1,20 +1,74 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 import UtmModal from "../../Components/Modals/UtmLinks/UtmLinks";
-import { utmLink } from "../../Components/Data/MockData";
+import { useUtm } from "./useHook";
 
 function UtmLinks() {
+  const { getUtmLinks, addUtm, updateUtmStatus } = useUtm();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [utmLinks, setUtmLinks] = useState(utmLink);
+  const [utmLinks, setUtmLinks] = useState([]);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  const handleDelete = (id) => {
-    setUtmLinks((prev) => prev.filter((utm) => utm.id !== id));
+  const fetchUtmLinks = async () => {
+    await getUtmLinks(setUtmLinks);
   };
 
-  const handleAddUtmLink = (newUtm) => {
-    setUtmLinks((prev) => [...prev, { ...newUtm, id: prev.length + 1 }]);
+  useEffect(() => {
+    fetchUtmLinks();
+  }, []);
+
+  const handleToggleStatus = async (id, currentStatus) => {
+    try {
+      const newStatus = !currentStatus;
+      const response = await updateUtmStatus(id, newStatus);
+      if (response) {
+        setUtmLinks((prev) =>
+          prev.map((utm) =>
+            utm.id === id ? { ...utm, status: newStatus } : utm
+          )
+        );
+
+        Swal.fire({
+          icon: "success",
+          title: "Status Updated",
+          text: "The UTM link status has been successfully updated!",
+          confirmButtonText: "OK",
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Failed to Update Status",
+        text: "There was an error updating the UTM link status. Please try again.",
+        confirmButtonText: "OK",
+      });
+      console.error("Failed to update UTM link status:", error);
+    }
+  };
+
+  const handleAddUtmLink = async (newUtm) => {
+    try {
+      const response = await addUtm(newUtm);
+      if (response) {
+        Swal.fire({
+          icon: "success",
+          title: "UTM Link Added",
+          text: "Your UTM link has been successfully added!",
+          confirmButtonText: "OK",
+        });
+        await fetchUtmLinks(); // Refresh the table by fetching the data again
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Failed to Add UTM Link",
+        text: "An error occurred while adding the UTM link. Please try again.",
+        confirmButtonText: "OK",
+      });
+      console.error("Failed to add UTM link:", error);
+    }
     closeModal();
   };
 
@@ -33,7 +87,6 @@ function UtmLinks() {
 
         <div className="mt-4">
           <div className="bg-gray-100">
-            {/* Table */}
             <div className="overflow-x-auto mt-6">
               <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
                 <thead>
@@ -43,7 +96,7 @@ function UtmLinks() {
                     <th className="p-4 text-left">Source</th>
                     <th className="p-4 text-left">Medium</th>
                     <th className="p-4 text-left">Campaign</th>
-                    <th className="p-4 text-left">Actions</th>
+                    <th className="p-4 text-left">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -57,13 +110,19 @@ function UtmLinks() {
                       <td className="p-4">{utm.source}</td>
                       <td className="p-4">{utm.medium}</td>
                       <td className="p-4">{utm.campaign}</td>
-                      <td className="p-4">
-                        <button
-                          className="bg-red-500 text-white px-4 py-2 rounded shadow hover:bg-red-600"
-                          onClick={() => handleDelete(utm.id)}
+                      <td className="px-6 py-4">
+                        <div
+                          className={`relative inline-block w-16 h-8 rounded-full transition-colors duration-300 cursor-pointer ${
+                            utm.status ? "bg-primary-dark" : "bg-[#cccccc]"
+                          }`}
+                          onClick={() => handleToggleStatus(utm.id, utm.status)}
                         >
-                          Delete
-                        </button>
+                          <div
+                            className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transform transition-transform duration-300 ${
+                              utm.status ? "translate-x-8" : ""
+                            }`}
+                          ></div>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -74,7 +133,6 @@ function UtmLinks() {
         </div>
       </div>
 
-      {/* Modal Component */}
       <UtmModal
         isOpen={isModalOpen}
         onClose={closeModal}

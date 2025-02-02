@@ -1,44 +1,84 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IoEye } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { mockUsers } from "../../Components/Data/MockData";
+import { useUser } from "./useHook";
+import Swal from "sweetalert2";
 
 function Users() {
+  const { getAllUsers, updateUserStatus, searchUsers } = useUser();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [filteredUsers, setFilteredUsers] = useState(mockUsers);
+  const [usersData, setUsersData] = useState([]);
 
-  const handleSearch = () => {
-    const filtered = mockUsers.filter(
-      (user) =>
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        (statusFilter ? user.status === statusFilter : true)
-    );
-    setFilteredUsers(filtered);
+  const handleSearch = async () => {
+    try {
+      const response = await searchUsers(searchQuery, statusFilter);
+      setUsersData(response);
+      setFilteredUsers(response);
+    } catch (error) {
+      console.error("Error in search:", error);
+      Swal.fire({
+        title: "Error",
+        text: "There was an issue with the search.",
+        icon: "error",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+    }
   };
 
   const handleReset = () => {
     setSearchQuery("");
     setStatusFilter("");
-    setFilteredUsers(mockUsers);
+    setFilteredUsers(usersData);
+    getAllUsers(setUsersData);
   };
+
+  useEffect(() => {
+    getAllUsers(setUsersData);
+  }, []);
 
   const handleShowDetails = (user) => {
     navigate("/users/view", { state: user });
   };
 
-  const handleToggleStatus = (id) => {
-    setFilteredUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === id
-          ? {
-              ...user,
-              status: user.status === "Active" ? "Inactive" : "Active",
-            }
-          : user
-      )
-    );
+  const handleToggleStatus = async (id, currentStatus) => {
+    try {
+      const newStatus = !currentStatus;
+      const response = await updateUserStatus(id, newStatus);
+
+      if (response) {
+        setUsersData((prevUser) =>
+          prevUser.map((user) =>
+            user.id === id ? { ...user, status: newStatus } : user
+          )
+        );
+
+        Swal.fire({
+          title: "Success",
+          text: `User status has been ${
+            newStatus ? "activated" : "deactivated"
+          } successfully!`,
+          icon: "success",
+          timer: 1000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: error.message || "Failed to update user status.",
+        icon: "error",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+    }
   };
 
   return (
@@ -64,8 +104,8 @@ function Users() {
             <option value="" className="opacity-25">
               Select Status
             </option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
           </select>
           <button
             className="w-full sm:w-[45%] md:w-60 bg-blue-500 text-white px-4 py-2 rounded-md"
@@ -106,7 +146,7 @@ function Users() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user, index) => (
+              {usersData.map((user, index) => (
                 <tr
                   key={user.id}
                   className={`${
@@ -124,7 +164,7 @@ function Users() {
                     />
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700">
-                    {user.name}
+                    {user.firstName} {user.lastName}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700">
                     {user.email}
@@ -132,15 +172,13 @@ function Users() {
                   <td className="px-6 py-4">
                     <div
                       className={`relative inline-block w-16 h-8 rounded-full transition-colors duration-300 cursor-pointer ${
-                        user.status === "Active"
-                          ? "bg-primary-dark"
-                          : "bg-[#cccccc]"
+                        user.status ? "bg-primary-dark" : "bg-[#cccccc]"
                       }`}
-                      onClick={() => handleToggleStatus(user.id)}
+                      onClick={() => handleToggleStatus(user.id, user.status)}
                     >
                       <div
                         className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transform transition-transform duration-300 ${
-                          user.status === "Active" ? "translate-x-8" : ""
+                          user.status ? "translate-x-8" : ""
                         }`}
                       ></div>
                     </div>

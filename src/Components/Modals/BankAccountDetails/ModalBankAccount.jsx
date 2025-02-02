@@ -10,7 +10,6 @@ const ModalBankAccount = ({ show, close, settingData, handleSave }) => {
     status: "Active",
   });
 
-  // If settingData changes (when editing an existing account), update the formData
   useEffect(() => {
     if (settingData) {
       setFormData(settingData);
@@ -82,8 +81,8 @@ const ModalBankAccount = ({ show, close, settingData, handleSave }) => {
             onChange={handleChange}
             className="w-full p-2 border rounded-md"
           >
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
           </select>
         </div>
         <div className="flex justify-end mt-6 space-x-4">

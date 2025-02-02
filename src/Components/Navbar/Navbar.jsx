@@ -1,10 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaUser, FaChevronDown, FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import useUsers from "./useHook";
+import './style.css';
 
 function Navbar() {
+  const { getAdminDetails } = useUsers();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [userData, setUserData] = useState();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    getAdminDetails(setUserData);
+  }, []);
 
   const toggleMenu = (e) => {
     e.stopPropagation();
@@ -12,18 +20,18 @@ function Navbar() {
   };
 
   const handlePageView = () => {
-    setIsDropdownOpen(false); // Close dropdown when navigating
+    setIsDropdownOpen(false);
     navigate("/cms");
   };
 
   const handleProfileView = () => {
-    setIsDropdownOpen(false); // Close dropdown when navigating
+    setIsDropdownOpen(false);
     navigate("/profile");
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    setIsDropdownOpen(false); // Close dropdown when logging out
+    localStorage.removeItem("token");
+    setIsDropdownOpen(false);
     navigate("/login");
   };
 
@@ -40,7 +48,10 @@ function Navbar() {
   }, []);
 
   return (
-    <div className="flex justify-between items-center bg-primary-dark text-white h-20 px-4 p-0">
+    <div
+      id="navbar"
+      className="flex justify-between items-center bg-primary-dark text-white h-20 px-4 p-0"
+    >
       <div>
         <h1 className="text-3xl font-bold">Hello Admin</h1>
       </div>
@@ -49,13 +60,24 @@ function Navbar() {
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-              <FaUser className="text-gray-700" />
+              {userData?.profileImage ? (
+                <img
+                  src={userData.profileImage}
+                  alt="User Profile"
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <FaUserCircle className="text-gray-700" />
+              )}
             </div>
+
             <span className="absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
           </div>
 
           <div>
-            <h2 className="text-lg font-medium text-black">Admin</h2>
+            <h2 className="text-lg font-medium text-black">
+              {userData?.firstName} {userData?.lastName}
+            </h2>
             <p className="text-l text-gray-900">admin</p>
           </div>
         </div>

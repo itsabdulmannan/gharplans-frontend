@@ -1,38 +1,61 @@
-import React, { useState } from "react";
-import {
-  FaClipboardList,
-  FaFileAlt,
-  FaQuestionCircle,
-  FaPlus,
-  FaEdit,
-} from "react-icons/fa";
-
+import React, { useState, useEffect } from "react";
+import { FaClipboardList, FaFileAlt, FaQuestionCircle, FaPlus, FaEdit } from "react-icons/fa";
+import { useHook } from "../../Containers/Cms-Setting/useHook";
 import ModalTermsAndConditions from "../../Components/Modals/TermsAndConditions/TermsAndCondition";
 import ModalPrivacyPolicy from "../../Components/Modals/PrivacyAndPolicy/PrivacyAndPolicy";
 import ModalFaqManagement from "../../Components/Modals/Faq/Faq";
-import ModalAddCities from "../../Components/Modals/Cities/City";
 
 function CmsSetting() {
+  const {
+    getTermAndCondition,
+    getPrivacyPolicy,
+    getFaqManagement,
+    addTermsAndConditions,
+    addPrivacyPolicy,
+    addFaqManagement,
+    updateTermsAndConditions,
+    updatePrivacyPolicy,
+    updateFaqManagement,
+  } = useHook();
+
   const [activeSetting, setActiveSetting] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState(null);
   const [settingsContent, setSettingsContent] = useState({
-    "Terms & Conditions": "Here are the Terms & Conditions content.",
-    "Privacy Policy": "Here is the Privacy Policy content.",
-    "FAQ's Management": "Manage your FAQ's here.",
-    "Add Cities": "Here you can add new cities.",
+    "Terms & Conditions": "",
+    "Privacy Policy": "",
+    "FAQ's Management": "",
   });
 
-  const handleItemClick = (label) => {
-    setActiveSetting(label);
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  const fetchAllData = async () => {
+    try {
+      await getTermAndCondition((data) => {
+        setSettingsContent((prev) => ({ ...prev, "Terms & Conditions": data }));
+      });
+      await getPrivacyPolicy((data) => {
+        setSettingsContent((prev) => ({ ...prev, "Privacy Policy": data }));
+      });
+      await getFaqManagement((data) => {
+        setSettingsContent((prev) => ({ ...prev, "FAQ's Management": data }));
+      });
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
   };
 
-  const getActiveContent = () => {
-    return settingsContent[activeSetting];
-  };
+  const getActiveContent = () => settingsContent[activeSetting];
 
-  const openModal = (setting) => {
-    setModalData(setting);
+  const openModal = (isNew = false, id = null) => {
+    setModalData({
+      label: activeSetting,
+      content: isNew ? "" : getActiveContent(),
+      isNew,
+      id,  // Pass the ID for edit
+    });
     setShowModal(true);
   };
 
@@ -41,12 +64,23 @@ function CmsSetting() {
     setModalData(null);
   };
 
-  const handleSave = (data) => {
-    setSettingsContent((prevContent) => ({
-      ...prevContent,
-      [activeSetting]: data, // Update the content for the active setting
-    }));
-    closeModal();
+  const handleSave = async (data, isNew, id) => {
+    try {
+      if (activeSetting === "Terms & Conditions") {
+        isNew ? await addTermsAndConditions(data) : await updateTermsAndConditions(data, id);
+      } else if (activeSetting === "Privacy Policy") {
+        isNew ? await addPrivacyPolicy(data) : await updatePrivacyPolicy(data, id);
+      } else if (activeSetting === "FAQ's Management") {
+        isNew ? await addFaqManagement(data) : await updateFaqManagement(data, id);
+      }
+      setSettingsContent((prevContent) => ({
+        ...prevContent,
+        [activeSetting]: data,
+      }));
+      closeModal();
+    } catch (error) {
+      console.error("Error saving data:", error);
+    }
   };
 
   return (
@@ -57,17 +91,14 @@ function CmsSetting() {
           <div
             key={index}
             className={`flex items-center p-4 border rounded-lg cursor-pointer ${
-              activeSetting === item
-                ? "bg-primary-dark text-white"
-                : "bg-gray-100 hover:bg-gray-200"
+              activeSetting === item ? "bg-primary-dark text-white" : "bg-gray-100 hover:bg-gray-200"
             }`}
-            onClick={() => handleItemClick(item)}
+            onClick={() => setActiveSetting(item)}
           >
             <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-200">
               {item === "Terms & Conditions" && <FaClipboardList size={24} />}
               {item === "Privacy Policy" && <FaFileAlt size={24} />}
               {item === "FAQ's Management" && <FaQuestionCircle size={24} />}
-              {item === "Add Cities" && <FaQuestionCircle size={24} />}
             </div>
             <div className="ml-4">
               <p className="font-medium">{item}</p>
@@ -82,12 +113,7 @@ function CmsSetting() {
             <div className="flex justify-end">
               <button
                 className="mt-6 px-4 py-2 bg-blue-500 text-white rounded-md flex items-center"
-                onClick={() =>
-                  openModal({
-                    label: activeSetting,
-                    content: getActiveContent(),
-                  })
-                }
+                onClick={() => openModal(true)} // Open modal for "Add"
               >
                 <FaPlus size={16} className="mr-2" />
                 Add
@@ -99,12 +125,7 @@ function CmsSetting() {
                 <h3 className="text-xl font-bold">{activeSetting}</h3>
                 <button
                   className="text-sm text-blue-600 flex items-center"
-                  onClick={() =>
-                    openModal({
-                      label: activeSetting,
-                      content: getActiveContent(),
-                    })
-                  }
+                  onClick={() => openModal(false)} // Open modal for "Edit"
                 >
                   <FaEdit size={16} className="mr-1" />
                   Edit
@@ -116,7 +137,6 @@ function CmsSetting() {
         )}
       </div>
 
-      {/* Modal for Add/Edit */}
       {activeSetting === "Terms & Conditions" && (
         <ModalTermsAndConditions
           show={showModal}
@@ -135,14 +155,6 @@ function CmsSetting() {
       )}
       {activeSetting === "FAQ's Management" && (
         <ModalFaqManagement
-          show={showModal}
-          close={closeModal}
-          settingData={modalData}
-          handleSave={handleSave}
-        />
-      )}
-      {activeSetting === "Add Cities" && (
-        <ModalAddCities
           show={showModal}
           close={closeModal}
           settingData={modalData}

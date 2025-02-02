@@ -1,32 +1,23 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { IoEye } from "react-icons/io5";
-import { MdEdit } from "react-icons/md";
-import { mockProducts } from "../../../Components/Data/MockData";
+import { useCategoryProducts } from "./useHook";
 
 function CategoryView() {
   const navigate = useNavigate();
-  const [products, setProducts] = useState(mockProducts);
+  const { getCategoryProducts } = useCategoryProducts();
+  const [products, setCategoryProducts] = useState([]);
+  const location = useLocation();
+  const { id } = location.state || {};
 
-  const handleToggleStatus = (id) => {
-    setProducts((prevProducts) =>
-      prevProducts.map((product) =>
-        product.id === id
-          ? {
-              ...product,
-              status: product.status === "Active" ? "Inactive" : "Active",
-            }
-          : product
-      )
-    );
-  };
+  useEffect(() => {
+    if (id) {
+      getCategoryProducts(id, setCategoryProducts);
+    }
+  }, [id]);
 
-  const handlePageView = () => {
-    navigate("/category/view/products");
-  };
-
-  const editProduct = (id) => {
-    console.log(`Editing product with ID: ${id}`);
+  const handlePageView = (productId) => {
+    navigate("/category/view/products", { state: { productId } });
   };
 
   return (
@@ -73,7 +64,7 @@ function CategoryView() {
                 <td className="px-6 py-4 text-sm text-gray-700">{index + 1}</td>
                 <td className="px-6 py-4">
                   <img
-                    src={product.image}
+                    src={product?.image}
                     alt={product.name}
                     className="w-16 h-16 object-cover rounded-full shadow-lg"
                   />
@@ -85,28 +76,23 @@ function CategoryView() {
                   ${product.price}
                 </td>
                 <td className="px-6 py-4">
-                  <div
-                    className={`relative inline-block w-16 h-8 rounded-full transition-colors duration-300 cursor-pointer ${
-                      product.status === "Active"
-                        ? "bg-primary-dark"
-                        : "bg-[#cccccc]"
+                  <span
+                    className={`px-2 py-1 rounded-full text-sm ${
+                      product.status
+                        ? "bg-green-200 text-green-800"
+                        : "bg-red-200 text-red-800"
                     }`}
-                    onClick={() => handleToggleStatus(product.id)}
                   >
-                    <div
-                      className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transform transition-transform duration-300 ${
-                        product.status === "Active" ? "translate-x-8" : ""
-                      }`}
-                    ></div>
-                  </div>
+                    {product.status ? "Active" : "Inactive"}
+                  </span>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-700">
-                  {product.color}
+                  {product?.color?.primary}
                 </td>
                 <td className="px-6 py-4 flex space-x-4">
                   <button
                     className="bg-blue-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center"
-                    onClick={handlePageView}
+                    onClick={() => handlePageView(product.id)}
                   >
                     <IoEye />
                   </button>

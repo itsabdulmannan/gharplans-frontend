@@ -1,32 +1,55 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IoEye } from "react-icons/io5";
 import { MdEdit } from "react-icons/md";
-import { mockCategories } from "../../../Components/Data/MockData";
 import { useNavigate } from "react-router-dom";
-import AddCategory from "../../../Components/Modals/Category/AddCategory";
+import AddCategoryModal from "../../../Components/Modals/Category/AddCategory";
+import { useCategory } from "./useHook";
+import Swal from "sweetalert2";
 
 function Categories() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [categories, setCategories] = useState(mockCategories);
-
+  const [categories, setCategories] = useState([]);
   const [currentCategory, setCurrentCategory] = useState(null);
+  const {
+    addCategory,
+    editCategory,
+    loading,
+    getCategories,
+    updateCategoryStatus,
+  } = useCategory();
   const navigate = useNavigate();
+
   const toggleModal = () => {
     setModalOpen(!modalOpen);
   };
 
-  const handleSaveCategory = (categoryData, id = null) => {
-    if (id) {
-      setCategories((prevCategories) =>
-        prevCategories.map((category) =>
-          category.id === id ? { ...category, ...categoryData } : category
-        )
-      );
-    } else {
-      setCategories((prevCategories) => [
-        ...prevCategories,
-        { ...categoryData, id: prevCategories.length + 1 },
-      ]);
+  useEffect(() => {
+    getCategories(setCategories);
+  }, []);
+
+  const handleSaveCategory = async (categoryData, id = null) => {
+    try {
+      let response;
+
+      if (id) {
+        response = await editCategory(id, categoryData);
+        if (response) {
+          await getCategories(setCategories);
+        }
+      } else {
+        response = await addCategory(categoryData);
+        if (response) {
+          await getCategories(setCategories);
+        }
+      }
+
+      if (response) {
+        toggleModal();
+        Swal.fire("Success", "Category saved successfully!", "success");
+      }
+    } catch (error) {
+      console.error("Error in handleSaveCategory:", error);
+      Swal.fire("Error", error.message || "Failed to save category.", "error");
     }
   };
 
@@ -35,21 +58,43 @@ function Categories() {
     toggleModal();
   };
 
-  const handleToggleStatus = (id) => {
-    setCategories((prevCategories) =>
-      prevCategories.map((category) =>
-        category.id === id
-          ? {
-              ...category,
-              status: category.status === "active" ? "inactive" : "active",
-            }
-          : category
-      )
-    );
+  const handleToggleStatus = async (id, currentStatus) => {
+    try {
+      const newStatus = !currentStatus;
+      const response = await updateCategoryStatus(id, newStatus);
+
+      if (response) {
+        setCategories((prevCategories) =>
+          prevCategories.map((category) =>
+            category.id === id ? { ...category, status: newStatus } : category
+          )
+        );
+
+        Swal.fire({
+          title: "Success",
+          text: `Category status has been ${
+            newStatus ? "activated" : "deactivated"
+          } successfully!`,
+          icon: "success",
+          timer: 1000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: error.message || "Failed to update category status.",
+        icon: "error",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+    }
   };
 
-  const handleViewPage = () => {
-    navigate("/category/view");
+  const handleViewPage = (id) => {
+    navigate("/category/view", { state: { id } });
   };
 
   return (
@@ -99,7 +144,10 @@ function Categories() {
                 <td className="px-4 py-2">{index + 1}</td>
                 <td className="px-4 py-2">
                   <img
-                    src={category.image ||"https://picsum.photos/200/300?grayscale"}
+                    src={
+                      category.image ||
+                      "https://picsum.photos/200/300?grayscale"
+                    }
                     alt={category.name}
                     className="w-12 h-12 object-cover rounded-3xl"
                   />
@@ -108,15 +156,15 @@ function Categories() {
                 <td className="px-6 py-4">
                   <div
                     className={`relative inline-block w-16 h-8 rounded-full transition-colors duration-300 cursor-pointer ${
-                      category.status === "active"
-                        ? "bg-primary-dark"
-                        : "bg-[#cccccc]"
+                      category.status ? "bg-primary-dark" : "bg-[#cccccc]"
                     }`}
-                    onClick={() => handleToggleStatus(category.id)}
+                    onClick={() =>
+                      handleToggleStatus(category.id, category.status)
+                    }
                   >
                     <div
                       className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transform transition-transform duration-300 ${
-                        category.status === "active" ? "translate-x-8" : ""
+                        category.status ? "translate-x-8" : ""
                       }`}
                     ></div>
                   </div>
@@ -130,7 +178,7 @@ function Categories() {
                   </button>
                   <button
                     className="bg-blue-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center"
-                    onClick={() => handleViewPage(category)}
+                    onClick={() => handleViewPage(category.id)}
                   >
                     <IoEye />
                   </button>
@@ -141,7 +189,7 @@ function Categories() {
         </table>
       </div>
 
-      <AddCategory
+      <AddCategoryModal
         modalOpen={modalOpen}
         toggleModal={toggleModal}
         category={currentCategory}

@@ -1,30 +1,58 @@
-import React, { useState } from "react";
-import { AiOutlineDelete } from "react-icons/ai"; // Importing delete icon from react-icons
+import React, { useState, useEffect, useRef } from "react";
+import { AiOutlineDelete } from "react-icons/ai";
+import { useDiscountTier } from "../../../Containers/Products/ProductView/useHook";
 
 const DiscountModal = ({ isOpen, onClose, productId }) => {
-  const [discountTiers, setDiscountTiers] = useState([
-    { startRange: "1", endRange: "5", discount: "10%" },
-    { startRange: "6", endRange: "10", discount: "15%" },
-  ]);
+  const { getDiscountTier, addDiscountTier, delteDiscountTier } =
+    useDiscountTier();
+  const [discountTiers, setDiscountTiers] = useState([]);
   const [startRange, setStartRange] = useState("");
   const [endRange, setEndRange] = useState("");
   const [discount, setDiscount] = useState("");
+  const prevIsOpen = useRef(isOpen);
+  const prevProductId = useRef(productId);
+
+  useEffect(() => {
+    if (productId && isOpen) {
+      getDiscountTier(productId, setDiscountTiers);
+    }
+  }, [productId, isOpen]);
 
   const handleAddDiscount = () => {
     if (!startRange || !endRange || !discount) {
       alert("Please fill in all fields");
       return;
     }
-    const newDiscount = { startRange, endRange, discount };
-    setDiscountTiers([...discountTiers, newDiscount]);
-    setStartRange("");
-    setEndRange("");
-    setDiscount("");
+
+    const newDiscount = {
+      startRange: parseInt(startRange),
+      endRange: parseInt(endRange),
+      discount,
+    };
+
+    addDiscountTier(productId, newDiscount).then((updatedDiscountTiers) => {
+      if (updatedDiscountTiers && Array.isArray(updatedDiscountTiers)) {
+        setDiscountTiers(updatedDiscountTiers);
+      } else {
+        setDiscountTiers([...discountTiers, newDiscount]);
+      }
+      setStartRange("");
+      setEndRange("");
+      setDiscount("");
+    });
   };
 
-  const handleDeleteDiscount = (index) => {
-    const updatedDiscountTiers = discountTiers.filter((_, i) => i !== index);
-    setDiscountTiers(updatedDiscountTiers);
+  const handleDeleteDiscount = async (discountTierId) => {
+    try {
+      const response = await delteDiscountTier(productId, discountTierId);
+      if (response.status === 200) {
+        setDiscountTiers(
+          discountTiers.filter((tier) => tier.id !== discountTierId)
+        );
+      }
+    } catch (error) {
+      console.error("Error deleting discount tier:", error);
+    }
   };
 
   return (
@@ -34,25 +62,34 @@ const DiscountModal = ({ isOpen, onClose, productId }) => {
           <h3 className="text-2xl font-semibold text-gray-800 mb-4">
             Discount Tiers for Product #{productId}
           </h3>
+
           <div>
             <h4 className="text-xl font-semibold text-gray-700 mb-2">
               Existing Discount Tiers
             </h4>
-            <ul className="space-y-2">
-              {discountTiers.map((tier, index) => (
-                <li key={index} className="flex justify-between items-center">
-                  <span>
-                    {tier.startRange} - {tier.endRange} items: {tier.discount}
-                  </span>
-                  <button
-                    onClick={() => handleDeleteDiscount(index)}
-                    className="text-red-600 hover:text-red-800"
+            {discountTiers.length === 0 ? (
+              <p className="text-gray-500">No data found</p>
+            ) : (
+              <ul className="space-y-2">
+                {discountTiers.map((tier) => (
+                  <li
+                    key={tier.id}
+                    className="flex justify-between items-center"
                   >
-                    <AiOutlineDelete />
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    <span>
+                      Start Range: {tier.startRange} - End Range:{" "}
+                      {tier.endRange} Discount Percentage: {tier.discount}
+                    </span>
+                    <button
+                      className="text-red-600 hover:text-red-800"
+                      onClick={() => handleDeleteDiscount(tier.id)}
+                    >
+                      <AiOutlineDelete />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="mt-6">
@@ -97,14 +134,14 @@ const DiscountModal = ({ isOpen, onClose, productId }) => {
                 />
               </div>
             </div>
-            <div className="mt-4">
+            {/* <div className="mt-4">
               <button
                 onClick={handleAddDiscount}
                 className="w-full p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600"
               >
                 Add Discount Tier
               </button>
-            </div>
+            </div> */}
           </div>
 
           <div className="flex justify-between mt-6 space-x-4">
@@ -115,7 +152,7 @@ const DiscountModal = ({ isOpen, onClose, productId }) => {
               Cancel
             </button>
             <button
-              onClick={onClose}
+              onClick={handleAddDiscount}
               className="w-1/2 p-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
             >
               Save

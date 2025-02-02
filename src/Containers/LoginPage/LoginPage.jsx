@@ -1,25 +1,21 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import useLogin from "./useHook";
 import "./style.css";
 
 const LoginPage = () => {
+  const { loginUser } = useLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-
-    const hardcodedEmail = "admin";
-    const hardcodedPassword = "admin";
-
-    if (email === hardcodedEmail && password === hardcodedPassword) {
-      localStorage.setItem("authToken", "dummy-auth-token");
-      navigate("/dashboard");
-    } else {
-      alert("Invalid email or password!");
-    }
+    const body = {
+      email,
+      password,
+    };
+    // Pass the login body to the hook
+    await loginUser(body);
   };
 
   const togglePasswordVisibility = () => {

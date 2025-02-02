@@ -1,42 +1,105 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { MdDelete, MdEdit } from "react-icons/md";
 import ModalBankAccount from "../../Components/Modals/BankAccountDetails/ModalBankAccount";
-import { mockBankAccountData } from "../../Components/Data/MockData";
+import { useBankAccount } from "./useHook";
+import Swal from "sweetalert2";
 
 function BankAccount() {
+  const {
+    getAllBankAccounts,
+    addBankAccount,
+    deleteBankAccount,
+    editBankAccountDetails,
+  } = useBankAccount();
   const [showModal, setShowModal] = useState(false);
-  const [bankAccounts, setBankAccounts] = useState(mockBankAccountData);
+  const [bankAccounts, setBankAccounts] = useState([]);
   const [editingAccount, setEditingAccount] = useState(null);
+
+  useEffect(() => {
+    getAllBankAccounts(setBankAccounts);
+  }, []);
 
   const handleAddClick = () => {
     setEditingAccount(null);
     setShowModal(true);
   };
 
-  const handleSave = (newAccount) => {
-    if (editingAccount) {
-      setBankAccounts((prevAccounts) =>
-        prevAccounts.map((account) =>
-          account.accountNumber === editingAccount.accountNumber
-            ? newAccount
-            : account
-        )
-      );
-    } else {
-      setBankAccounts((prevAccounts) => [...prevAccounts, newAccount]);
+  const handleSave = async (newAccount) => {
+    try {
+        if (editingAccount) {
+            const response = await editBankAccountDetails(editingAccount.id, newAccount);
+            if (response && response.data) {
+                setBankAccounts((prevAccounts) =>
+                    prevAccounts.map((account) =>
+                        account.id === editingAccount.id ? response.data : account
+                    )
+                );
+
+                Swal.fire({
+                    title: "Success!",
+                    text: "Bank account updated successfully.",
+                    icon: "success",
+                    confirmButtonText: "OK",
+                });
+            }
+        } else {
+            const response = await addBankAccount(newAccount);
+            if (response && response.data) {
+                setBankAccounts((prevAccounts) => [...prevAccounts, response.data]);
+
+                Swal.fire({
+                    title: "Success!",
+                    text: "Bank account added successfully.",
+                    icon: "success",
+                    confirmButtonText: "OK",
+                });
+            }
+        }
+        setShowModal(false);
+        getAllBankAccounts(setBankAccounts);
+    } catch (error) {
+        console.error("Error saving bank account:", error);
+        Swal.fire({
+            title: "Error!",
+            text: "There was an issue saving the bank account.",
+            icon: "error",
+            confirmButtonText: "OK",
+        });
     }
-    setShowModal(false);
-  };
+};
 
-  const handleEdit = (account) => {
-    setEditingAccount(account);
-    setShowModal(true);
-  };
 
-  const handleDelete = (accountNumber) => {
-    setBankAccounts((prevAccounts) =>
-      prevAccounts.filter((account) => account.accountNumber !== accountNumber)
-    );
+const handleEdit = (account) => {
+  setEditingAccount(account);
+  setShowModal(true);
+};
+
+  const handleDelete = async (accountNumber) => {
+    try {
+      const response = await deleteBankAccount(accountNumber);
+      if (response && response.data) {
+        setBankAccounts((prevAccounts) =>
+          prevAccounts.filter(
+            (account) => account.accountNumber !== accountNumber
+          )
+        );
+        Swal.fire({
+          title: "Deleted!",
+          text: "Bank account deleted successfully.",
+          icon: "success",
+          confirmButtonText: "OK",
+        });
+        getAllBankAccounts(setBankAccounts);
+      }
+    } catch (error) {
+      console.error("Error deleting bank account:", error);
+      Swal.fire({
+        title: "Error!",
+        text: "There was an issue deleting the bank account.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+    }
   };
 
   const handleCloseModal = () => {
@@ -106,7 +169,7 @@ function BankAccount() {
                       <MdEdit />
                     </button>
                     <button
-                      onClick={() => handleDelete(account.accountNumber)}
+                      onClick={() => handleDelete(account.id)}
                       className="bg-red-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center"
                     >
                       <MdDelete />

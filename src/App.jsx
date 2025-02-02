@@ -1,19 +1,46 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import LoginPage from "./Containers/LoginPage/LoginPage";
 import ProtectedRoute from "./Utils/ProtectedRoutes";
 import AdminLayout from "./Components/Layout/AdminLayout";
 import routes from "./Utils/routes";
+import useHtpp from "./Utils/useHttps";
+import { useEffect, useState } from "react";
 
 function App() {
-  // const isLoggedIn = !!localStorage.getItem("authToken");
-  const isLoggedIn = true;
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
+  const { configureHeaders, configureInterceptors } = useHtpp();
+  useEffect(() => {
+    configureHeaders();
+    configureInterceptors();
+  }, []);
+
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+  };
 
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/login" element={<LoginPage />} />
-        
+        <Route
+          path="/"
+          element={
+            isLoggedIn ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/login"
+          element={<LoginPage onLoginSuccess={handleLoginSuccess} />}
+        />
+
         <Route
           path="/*"
           element={
