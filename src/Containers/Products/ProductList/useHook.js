@@ -11,11 +11,9 @@ export const useProducts = () => {
                 setProducts(response.data.products);
             } else {
                 console.error("Invalid response format:", response);
-                setCategoryProducts([]);
             }
         } catch (error) {
             console.error("Error in Hook:", error.message || error);
-            setCategoryProducts([]);
         }
     };
     const getCategories = async (setCategories) => {
