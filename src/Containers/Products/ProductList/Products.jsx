@@ -152,7 +152,7 @@ function Products() {
           >
             Add Product
           </button>
-          <button
+          {/* <button
             className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
             onClick={() => {
               setProductToEdit(null);
@@ -160,7 +160,7 @@ function Products() {
             }}
           >
             Add Featured Products
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -215,7 +215,7 @@ function Products() {
                 <td className="px-6 py-4 text-sm text-gray-700">{index + 1}</td>
                 <td className="px-6 py-4">
                   <img
-                    src={product.image}
+                    src={product.colors[0]?.image}
                     alt={product.name}
                     className="w-16 h-16 object-cover rounded-full shadow-lg"
                   />
