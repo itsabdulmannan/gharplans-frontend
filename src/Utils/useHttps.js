@@ -2,8 +2,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 
 export const Request = axios.create({
-  baseURL: 'http://13.61.12.205'
-  // baseURL: 'http://localhost:3005'
+  baseURL: 'http://16.170.239.246/api/'
 });
 
 const useHtpp = () => {
@@ -27,16 +26,16 @@ const useHtpp = () => {
       async (error) => {
         const backendMessage = error.response?.data?.message || "Something went wrong";
         const statusCode = error.response?.status;
-    
+
         Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: backendMessage,
+          icon: "error",
+          title: "Oops...",
+          text: backendMessage,
         });
         console.error(`API Error (status: ${statusCode}):`, error.response?.data || error);
         return Promise.reject(error);
-    }
-    
+      }
+
     );
   };
   return { configureHeaders, configureInterceptors };
