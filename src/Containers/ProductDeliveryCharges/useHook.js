@@ -11,7 +11,7 @@ export const useDeliveryCharges = () => {
     };
     const getProducts = async (setProducts) => {
         try {
-            const response = await Apis.getProducts();
+            const response = await Apis.getProductsForDeliveryCharges();
             if (response && response.data && Array.isArray(response.data.products)) {
                 setProducts(response.data.products);
             } else {

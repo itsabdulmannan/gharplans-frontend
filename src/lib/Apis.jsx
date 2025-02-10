@@ -19,7 +19,12 @@ export const Apis = {
     }),
   getCategoryProducts: (id) => Request.get(`/product?categoryId=${id}`),
   // Prodcuts Api
-  getProducts: () => Request.get("/product"),
+  getProducts: () =>
+    Request.get("/product", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }),
   updateProductStatus: (data) => Request.patch(`/product/status`, data),
   getProductDetails: (id) => Request.get(`/product?id=${id}`),
   deletProduct: (id) => Request.delete(`/product/${id}`),
@@ -79,13 +84,21 @@ export const Apis = {
   updateUtmStatus: (id, status) =>
     Request.patch(`/utm/update?id=${id}&status=${status}`),
   // Cities
-  getCities: () => Request.get("/cities"),
+  getCities: () =>
+    Request.get("/cities", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }),
   createCity: (data) => Request.post("/cities", data),
   updateCityStatus: (id, data) =>
     Request.put(`/cities/${id}`, { name: data.name }),
   deleteCity: (id) => Request.delete(`/cities/${id}`),
   // Product Delivery Charges
-  getProductsDeliveryCharges: () => Request.get("/delivery-charges/product"),
+  getProductsDeliveryCharges: () =>
+    Request.get("/delivery-charges/product", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    }),
   addProductDeliveryCharges: (data) =>
     Request.post("/delivery-charges/product", data),
   deleteProductDeliveryCharges: (id) =>
@@ -122,4 +135,10 @@ export const Apis = {
   getStats: () => Request.get("/user/statistics"),
   // Pdf
   generatePdf: (data) => Request.post("/quotation", data),
+  getProductsForDeliveryCharges: () =>
+    Request.get(`/product?offset=0&limit=1000`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }),
 };

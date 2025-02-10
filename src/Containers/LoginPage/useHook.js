@@ -1,9 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2"; // To show SweetAlert2 notifications
+import { useDispatch } from "react-redux";
+import Swal from "sweetalert2";
 import { Apis } from "../../lib/Apis";
+import { loginSuccess } from "../../redux/slice/authSlice";
 
 const useLogin = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const loginUser = async (body) => {
     try {
@@ -11,6 +14,7 @@ const useLogin = () => {
 
       if (response && response.data.token) {
         localStorage.setItem("token", response.data.token);
+        dispatch(loginSuccess());
 
         Swal.fire({
           title: "Success!",

@@ -31,6 +31,7 @@ function Products() {
       const response = await addProduct(productData);
 
       if (response) {
+        await getProducts(setProducts);
         setProducts([...products, response]);
         Swal.fire({
           title: "Success",
@@ -199,9 +200,9 @@ function Products() {
               <th className="px-6 py-3 text-left text-sm font-semibold">
                 Color
               </th>
-              {/* <th className="px-6 py-3 text-left text-sm font-semibold">
+              <th className="px-6 py-3 text-left text-sm font-semibold">
                 Actions
-              </th> */}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -248,14 +249,14 @@ function Products() {
                 <td className="px-6 py-4 text-sm text-gray-700">
                   {product.colors[0]?.color || "N/A"}
                 </td>
-                {/* <td className="px-6 py-4 flex space-x-4">
+                <td className="px-6 py-4 flex space-x-4">
                   <button
                     className="bg-blue-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center"
                     onClick={() => handleViewPage(product.id)}
                   >
                     <IoEye />
                   </button>
-                </td> */}
+                </td>
               </tr>
             ))}
           </tbody>

@@ -69,7 +69,6 @@ export const useProducts = () => {
             return null;
         }
     };
-
     const addProduct = async (formData) => {
         try {
             const response = await Apis.addProduct(formData);

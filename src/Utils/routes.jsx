@@ -120,7 +120,7 @@ const routes = [
   {
     path: "/reviews",
     element: Review,
-    label: "Mange Reviews",
+    label: "Manage Reviews",
     icon: <MdOutlineRateReview size={30} />,
   },
   {
