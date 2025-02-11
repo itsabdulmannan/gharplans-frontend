@@ -12,6 +12,7 @@ import { CiLink } from "react-icons/ci";
 import { FaCity } from "react-icons/fa";
 import { MdOutlineCategory } from "react-icons/md";
 import { LuTextQuote } from "react-icons/lu";
+import { BiSolidCarousel } from "react-icons/bi";
 import Dashboard from "../Containers/Dashboard/Dashboard.jsx";
 import Products from "../Containers/Products/ProductList/Products.jsx";
 import Categories from "../Containers/Categories/CategoriesList/Categories.jsx";
@@ -31,6 +32,7 @@ import UtmLinks from "../Containers/UtmLinks/UtmLinks.jsx";
 import Profile from "../Containers/Profile/Profile.jsx";
 import Cities from "../Containers/Cities/Cities.jsx";
 import QuotationPage from "../Containers/Quotation/QuotationPage.jsx";
+import CarouselManagement from "../Containers/CarouselProducts/CarouselProducts.jsx";
 
 const routes = [
   {
@@ -147,6 +149,12 @@ const routes = [
   //   label: "Change Feeature Prodcut",
   //   icon: <MdSettingsSuggest size={30} />,
   // },
+  {
+    path: "/manage-carousel",
+    element: CarouselManagement,
+    label: "Change Carousel Items",
+    icon: <BiSolidCarousel size={30} />,
+  },
   {
     path: "/social-links",
     element: UtmLinks,

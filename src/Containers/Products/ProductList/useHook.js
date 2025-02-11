@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Apis } from "../../../lib/Apis";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 export const useProducts = () => {
     const [loading, setLoading] = useState(false);
@@ -72,6 +73,13 @@ export const useProducts = () => {
     const addProduct = async (formData) => {
         try {
             const response = await Apis.addProduct(formData);
+            Swal.fire({
+                title: "Success",
+                text: "Product has been added successfully.",
+                icon: "success",
+                timer: 1500,
+                showConfirmButton: false,
+            });
             return response.data;
         } catch (error) {
             console.error(error);

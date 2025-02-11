@@ -1,11 +1,10 @@
 // Products.js
 import React, { useState, useEffect } from "react";
-import ProductModal from "../../../Components/Modals/Products/AddProducts";
-import { IoEye } from "react-icons/io5";
-import { FaTrash } from "react-icons/fa";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useProducts } from "./useHook";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { IoEye } from "react-icons/io5";
+import ProductModal from "../../../Components/Modals/Products/AddProducts";
+import { useProducts } from "./useHook";
 
 function Products() {
   const {
@@ -15,10 +14,12 @@ function Products() {
     deleteProduct,
     addProduct,
   } = useProducts();
+
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [productToEdit, setProductToEdit] = useState(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,35 +27,20 @@ function Products() {
     getProducts(setProducts);
   }, []);
 
-  const handleAddProduct = async (productData) => {
+  const handleAddProduct = async (formData) => {
     try {
-      const response = await addProduct(productData);
-
-      if (response) {
-        await getProducts(setProducts);
-        setProducts([...products, response]);
-        Swal.fire({
-          title: "Success",
-          text: "Product has been added successfully.",
-          icon: "success",
-          timer: 1500,
-          showConfirmButton: false,
-        });
-      }
+      const response = await addProduct(formData);
+      setProducts((prev) => [...prev, response]);
+      setShowModal(false);
     } catch (error) {
-      Swal.fire({
-        title: "Error",
-        text: error.message || "Failed to add product.",
-        icon: "error",
-        timer: 2000,
-        showConfirmButton: false,
-      });
+      console.error(error);
     }
   };
 
   const handleViewPage = (id) => {
     navigate("/products/view", { state: { id } });
   };
+
   const handleQuotationPageView = () => {
     navigate("/quotation");
   };
@@ -85,7 +71,7 @@ function Products() {
     } catch (error) {
       Swal.fire({
         title: "Error",
-        text: error.message || "Failed to update product status.",
+        text: error?.message || "Failed to update product status.",
         icon: "error",
         timer: 2000,
         timerProgressBar: true,
@@ -109,9 +95,7 @@ function Products() {
       if (result.isConfirmed) {
         const response = await deleteProduct(id);
         if (response) {
-          setProducts((prevProducts) =>
-            prevProducts.filter((product) => product.id !== id)
-          );
+          setProducts((prev) => prev.filter((product) => product.id !== id));
 
           Swal.fire({
             title: "Deleted!",
@@ -153,15 +137,6 @@ function Products() {
           >
             Add Product
           </button>
-          {/* <button
-            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-            onClick={() => {
-              setProductToEdit(null);
-              setShowModal(true);
-            }}
-          >
-            Add Featured Products
-          </button> */}
         </div>
       </div>
 
@@ -198,9 +173,6 @@ function Products() {
                 Status
               </th>
               <th className="px-6 py-3 text-left text-sm font-semibold">
-                Color
-              </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">
                 Actions
               </th>
             </tr>
@@ -214,25 +186,38 @@ function Products() {
                 } hover:bg-gray-200 transition-colors duration-300`}
               >
                 <td className="px-6 py-4 text-sm text-gray-700">{index + 1}</td>
+
                 <td className="px-6 py-4">
-                  <img
-                    src={product.colors[0]?.image}
-                    alt={product.name}
-                    className="w-16 h-16 object-cover rounded-full shadow-lg"
-                  />
+                  {product.colors?.[0]?.images?.[0] ? (
+                    <img
+                      src={product.colors[0].images[0]}
+                      alt={product.name}
+                      className="w-16 h-16 object-cover rounded-full shadow-lg"
+                    />
+                  ) : (
+                    <span>No Image</span>
+                  )}
                 </td>
+
+                {/* Category */}
                 <td className="px-6 py-4 text-sm text-gray-600">
                   {product.category?.name || "N/A"}
                 </td>
+
+                {/* Name */}
                 <td className="px-6 py-4 text-sm text-gray-700">
                   {product.name}
                 </td>
+
+                {/* Price */}
                 <td className="px-6 py-4 text-sm text-gray-700">
-                  ${product.price}
+                  {product.price}
                 </td>
+
+                {/* Status Toggle */}
                 <td className="px-6 py-4">
                   <div
-                    className={`relative inline-block w-16 h-8 rounded-full transition-colors duration-300 cursor-pointer ${
+                    className={`relative inline-block w-16 h-8 rounded-full cursor-pointer ${
                       product.status ? "bg-primary-dark" : "bg-[#cccccc]"
                     }`}
                     onClick={() =>
@@ -246,9 +231,7 @@ function Products() {
                     ></div>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-700">
-                  {product.colors[0]?.color || "N/A"}
-                </td>
+
                 <td className="px-6 py-4 flex space-x-4">
                   <button
                     className="bg-blue-500 text-white py-2 px-4 rounded-lg shadow-md flex items-center"
@@ -256,6 +239,9 @@ function Products() {
                   >
                     <IoEye />
                   </button>
+                  {/* <button onClick={() => handleDelete(product.id)}>
+                    <FaTrash />
+                  </button> */}
                 </td>
               </tr>
             ))}

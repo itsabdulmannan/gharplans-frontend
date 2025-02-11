@@ -141,4 +141,9 @@ export const Apis = {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     }),
+  addStock: (payload) => Request.post("/product/update-stock", payload),
+  addCarouselItems: (data) => Request.post("/product/change-order", data),
+  getProducts: () => Request.get("/product?offset=0&limit=1000"),
+  getCarouselItems: () => Request.get("/product/carousel-products"),
+  updateCarouselItems: (data) => Request.put("product/update-carousel", data),
 };

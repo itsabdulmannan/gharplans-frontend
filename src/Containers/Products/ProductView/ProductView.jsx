@@ -6,12 +6,18 @@ import Swal from "sweetalert2";
 import { useDiscountTier } from "./useHook";
 
 const ProductDetails = () => {
-  const { showOnHomeScreen, getProductData } = useDiscountTier();
+  const { showOnHomeScreen, getProductData, addStock } = useDiscountTier();
   const [productData, setProductData] = useState(null);
   const location = useLocation();
   const { id } = location?.state;
   const [formData, setFormData] = useState({ ...mockProducts });
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [stockQuantity, setStockQuantity] = useState(0);
+  useEffect(() => {
+    getProductData(id, setProductData);
+  }, [id, stockQuantity]);
+  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -19,9 +25,6 @@ const ProductDetails = () => {
       [name]: value,
     });
   };
-  useEffect(() => {
-    getProductData(id, setProductData);
-  }, []);
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     setFormData({
@@ -30,27 +33,21 @@ const ProductDetails = () => {
     });
   };
 
-  const handleHomeScreenProduct = (homePageValue) => {
-    console.log(homePageValue);
-    Swal.fire({
-      title: "Are you sure?",
-      text: `Do you want to ${
-        homePageValue === 1 ? "show" : "remove"
-      } this product on the home screen?`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: `Yes, ${homePageValue === 1 ? "show" : "remove"} it!`,
-      cancelButtonText: "No, keep it off",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const newHomeScreenStatus = homePageValue === 1 ? "yes" : "no";
-        setFormData({
-          ...formData,
-          homeScreen: newHomeScreenStatus,
-        });
-        showOnHomeScreen(id, homePageValue);
-      }
-    });
+  const handleStockUpdate = () => {
+    setStockQuantity(productData?.totalProducts || 0);
+    setIsStockModalOpen(true);
+  };
+  
+  const handleStockSubmit = () => {
+    if (stockQuantity < 0) {
+      Swal.fire("Invalid Quantity", "Please enter a valid quantity", "error");
+    } else {
+      addStock(id, stockQuantity).then(() => {
+        setIsStockModalOpen(false);
+        setStockQuantity(0);
+        getProductData(id, setProductData);
+      });
+    }
   };
 
   const handleDropdownChange = (e) => {
@@ -60,23 +57,12 @@ const ProductDetails = () => {
       [name]: value,
     });
   };
-
-  const handleCheckboxChange = (e) => {
-    const { name, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: checked,
-    });
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
   };
-
   const handleAddDiscountDetail = () => {
     setIsDiscountModalOpen(true);
   };
-
   const closeDiscountModal = () => {
     setIsDiscountModalOpen(false);
   };
@@ -86,13 +72,12 @@ const ProductDetails = () => {
       <div className="bg-gray-100 p-4 flex justify-between">
         <h2 className="text-2xl font-bold mb-1">View or Edit Products</h2>
         <div className="flex space-x-4">
+          <h1 className="mt-2">Available Stock {productData?.totalProducts}</h1>
           <button
             className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-            onClick={() =>
-              handleHomeScreenProduct(productData.homeScreen ? 0 : 1)
-            }
+            onClick={handleStockUpdate}
           >
-            {productData ? "Remove from Home Screen" : "Add to Home Screen"}
+            Update Stock Availability
           </button>
           <button
             className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
@@ -244,6 +229,36 @@ const ProductDetails = () => {
           onClose={closeDiscountModal}
           productId={id}
         />
+      )}
+      {isStockModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-lg font-semibold mb-4">
+              Update Stock Quantity
+            </h2>
+            <input
+              type="number"
+              className="w-full p-2 border border-gray-300 rounded-md mb-4"
+              value={stockQuantity}
+              onChange={(e) => setStockQuantity(e.target.value)}
+              placeholder="Enter quantity"
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                className="bg-gray-400 text-white py-2 px-4 rounded"
+                onClick={() => setIsStockModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+                onClick={handleStockSubmit}
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

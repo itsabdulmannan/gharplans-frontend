@@ -64,13 +64,32 @@ export const useDiscountTier = () => {
     const getProductData = async (productId, setProductData) => {
         try {
             const response = await Apis.getProductById(productId);
-            setProductData(response.data.homeScreen);
-            console.log(response.data.homeScreen);
+            setProductData(response.data);
+            console.log(response.data);
             return response.data.homeScreen;
         } catch (error) {
             return error;
         }
     }
-
-    return { getDiscountTier, addDiscountTier, delteDiscountTier, showOnHomeScreen, getProductData };
+    const addStock = async (productId, stock) => {
+        try {
+            const payload = {
+                productId,
+                stock
+            }
+            const response = await Apis.addStock(payload);
+            if (response?.status === 200) {
+                Swal.fire({
+                    title: "Success!",
+                    text: "Stock has been added successfully.",
+                    icon: "success",
+                    confirmButtonText: "OK",
+                });
+            }
+            return response
+        } catch (error) {
+            return error
+        }
+    }
+    return { getDiscountTier, addDiscountTier, delteDiscountTier, showOnHomeScreen, getProductData, addStock };
 }
