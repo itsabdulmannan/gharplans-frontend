@@ -28,16 +28,27 @@ function CarouselManagement() {
   };
 
   const openModal = (index = null) => {
-    if (index !== null) {
-      setSelectedProduct(carouselProducts[index].id);
-      setCurrentProductId(carouselProducts[index].id);
-      setEditIndex(index);
+    if (index !== null && Array.isArray(carouselProducts) && carouselProducts.length > 0) {
+      const selectedItem = carouselProducts[index];
+  
+      if (selectedItem) {
+        setSelectedProduct(selectedItem.id);
+        setCurrentProductId(selectedItem.id);
+        setEditIndex(index);
+      } else {
+        setSelectedProduct("");
+        setCurrentProductId(null);
+        setEditIndex(null);
+      }
     } else {
       setSelectedProduct("");
       setCurrentProductId(null);
+      setEditIndex(null);
     }
+  
     setIsModalOpen(true);
   };
+  
 
   const closeModal = () => {
     setIsModalOpen(false);

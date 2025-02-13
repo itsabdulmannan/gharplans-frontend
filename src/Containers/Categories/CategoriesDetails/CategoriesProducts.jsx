@@ -8,6 +8,9 @@ function CategoriesProducts() {
   const { getProductDetails } = useProductDetails();
   const [activeTab, setActiveTab] = useState("description");
   const [productDetails, setProductDetails] = useState(null);
+  // State for color and image selection
+  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -15,29 +18,32 @@ function CategoriesProducts() {
 
   useEffect(() => {
     if (productId) {
-      getProductDetails(productId, setProductDetails);
+      getProductDetails(productId, (data) => {
+        setProductDetails(data);
+        // Reset color and image selection if colors are available
+        if (data && data.colors && data.colors.length > 0) {
+          setSelectedColorIndex(0);
+          setSelectedImageIndex(0);
+        }
+      });
     }
-  }, [productId]); // Removed `getProductDetails` from dependency array
+  }, [productId]);
 
   if (!productDetails) {
     return <div className="text-center py-6">Loading product details...</div>;
   }
 
   return (
-    <div className="bg-gray-100 h-screen flex flex-col p-4 overflow-hidden">
-      <div className="bg-white shadow-md rounded-lg p-3 mb-6 flex-grow overflow-y-auto">
-        <div className="flex items-center gap-4">
-          <img
-            src={productDetails.colors[0].image}
-            alt={productDetails.name}
-            className="w-40 h-40 rounded-lg object-cover"
-          />
+    <div className="bg-gray-100 min-h-screen flex flex-col p-4 overflow-hidden">
+      <div className="bg-white shadow-md rounded-lg p-6 mb-6 flex-grow overflow-y-auto">
+        {/* Product Basic Info */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">
-              Product Name: {productDetails.name}
+              Product Name: {productDetails.name || "Unnamed Product"}
             </h1>
             <p className="text-xl font-semibold text-gray-800 mb-4">
-              ${productDetails.price}
+              {productDetails.currency || ""} {productDetails.price || "N/A"}
             </p>
             <p className="text-sm text-gray-600 mb-2">
               <strong>Status:</strong>{" "}
@@ -50,17 +56,82 @@ function CategoriesProducts() {
               </span>
             </p>
             <p className="text-sm text-gray-600 mb-4">
-              <strong>Options:</strong>{" "}
-              {Object.entries(productDetails.options || {})
-                .map(([key, value]) => `${key}: ${value}`)
-                .join(", ")}
+              <strong>Weight:</strong>{" "}
+              {productDetails.weight ? productDetails.weight : "N/A"}
             </p>
             <p className="text-sm text-gray-600 mb-4">
-              <strong>Color:</strong> {productDetails.colors[0].color || {}}
+              <strong>Dimensions:</strong>{" "}
+              {productDetails.dimension ? productDetails.dimension : "N/A"}
             </p>
           </div>
         </div>
 
+        {/* Color Selector Section */}
+        {productDetails.colors && productDetails.colors.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Available Colors
+            </h2>
+            {/* Colors shown in a row as swatches */}
+            <div className="flex space-x-4">
+              {productDetails.colors.map((colorObj, index) => (
+                <div
+                  key={colorObj.id || index}
+                  onClick={() => {
+                    setSelectedColorIndex(index);
+                    setSelectedImageIndex(0);
+                  }}
+                  className={`w-10 h-10 rounded-full cursor-pointer border-2 ${
+                    selectedColorIndex === index
+                      ? "border-blue-500"
+                      : "border-transparent"
+                  }`}
+                  style={{ backgroundColor: colorObj.color || "transparent" }}
+                  title={colorObj.color || "No Color"}
+                ></div>
+              ))}
+            </div>
+            {/* Display images for the selected color */}
+            {productDetails.colors[selectedColorIndex] &&
+              productDetails.colors[selectedColorIndex].image &&
+              productDetails.colors[selectedColorIndex].image.length > 0 && (
+                <div className="mt-4">
+                  {/* Main Image */}
+                  <img
+                    src={
+                      productDetails.colors[selectedColorIndex].image[
+                        selectedImageIndex
+                      ]
+                    }
+                    alt={`Main view for ${
+                      productDetails.colors[selectedColorIndex].color || "Color"
+                    }`}
+                    className="w-[450px] h-[450px] object-cover rounded"
+                  />
+                  {/* Thumbnails */}
+                  <div className="mt-2 flex space-x-2">
+                    {productDetails.colors[selectedColorIndex].image.map(
+                      (imgUrl, idx) => (
+                        <img
+                          key={idx}
+                          src={imgUrl}
+                          alt={`Thumbnail ${idx}`}
+                          className={`w-20 h-20 object-cover rounded cursor-pointer ${
+                            selectedImageIndex === idx
+                              ? "border-2 border-blue-500"
+                              : "border"
+                          }`}
+                          onClick={() => setSelectedImageIndex(idx)}
+                        />
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+          </div>
+        )}
+
+        {/* Tabbed Description Section */}
         <div className="w-full mt-6">
           <div className="flex border-b border-gray-300">
             <button
@@ -85,32 +156,34 @@ function CategoriesProducts() {
             </button>
             <button
               className={`w-full py-2 text-sm font-medium ${
-                activeTab === "addiotionalInformation"
+                activeTab === "additionalInformation"
                   ? "border-b-2 border-blue-500 text-blue-500"
                   : "text-gray-700"
               }`}
-              onClick={() => handleTabChange("addiotionalInformation")}
+              onClick={() => handleTabChange("additionalInformation")}
             >
               Additional Info
             </button>
           </div>
-
           <div className="w-full p-4">
             {activeTab === "shortDescription" && (
               <p className="text-sm text-gray-600 mb-4">
                 <strong>Short Description:</strong>{" "}
-                {productDetails.shortDescription}
+                {productDetails.shortDescription ||
+                  "No short description available"}
               </p>
             )}
             {activeTab === "description" && (
               <p className="text-sm text-gray-600 mb-4">
-                <strong>Description:</strong> {productDetails.description}
+                <strong>Description:</strong>{" "}
+                {productDetails.description || "No description available"}
               </p>
             )}
-            {activeTab === "addiotionalInformation" && (
+            {activeTab === "additionalInformation" && (
               <p className="text-sm text-gray-600 mb-4">
                 <strong>Additional Info:</strong>{" "}
-                {productDetails.addiotionalInformation}
+                {productDetails.additionalInformation ||
+                  "No additional information available"}
               </p>
             )}
           </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { mockProducts } from "../../../Components/Data/MockData";
 import DiscountModal from "../../../Components/Modals/DiscounTier/DiscountTier";
+import ProductModal from "../../../Components/Modals/Products/AddProducts"; // Import your modal component
 import { useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import { useDiscountTier } from "./useHook";
@@ -9,70 +10,97 @@ const ProductDetails = () => {
   const { showOnHomeScreen, getProductData, addStock } = useDiscountTier();
   const [productData, setProductData] = useState(null);
   const location = useLocation();
-  const { id } = location?.state;
+  const { id } = location?.state || {};
   const [formData, setFormData] = useState({ ...mockProducts });
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [stockQuantity, setStockQuantity] = useState(0);
+  // State for color and image selection (for the image gallery)
+  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  // State for tab selection in descriptions
+  const [activeTab, setActiveTab] = useState("description");
+
+  // Only depend on the id so that updating the input doesn't trigger the API
   useEffect(() => {
-    getProductData(id, setProductData);
-  }, [id, stockQuantity]);
-  
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-  const handleFileChange = (e) => {
-    const { name, files } = e.target;
-    setFormData({
-      ...formData,
-      [name]: files[0],
-    });
-  };
+    if (id) {
+      getProductData(id, setProductData);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (productData) {
+      setFormData(productData);
+      // Reset gallery selection when new product data is loaded
+      if (productData.colors && productData.colors.length > 0) {
+        setSelectedColorIndex(0);
+        setSelectedImageIndex(0);
+      }
+    }
+  }, [productData]);
 
   const handleStockUpdate = () => {
     setStockQuantity(productData?.totalProducts || 0);
     setIsStockModalOpen(true);
   };
-  
-  const handleStockSubmit = () => {
-    if (stockQuantity < 0) {
-      Swal.fire("Invalid Quantity", "Please enter a valid quantity", "error");
-    } else {
-      addStock(id, stockQuantity).then(() => {
-        setIsStockModalOpen(false);
-        setStockQuantity(0);
-        getProductData(id, setProductData);
-      });
+
+  // Sanitize input: remove leading zeros (e.g., "012" becomes "12")
+  const handleStockChange = (e) => {
+    let value = e.target.value;
+    // Remove leading zeros, but leave "0" if that's the only digit
+    if (value.length > 1 && value.startsWith("0")) {
+      value = value.replace(/^0+/, "");
     }
+    setStockQuantity(value);
   };
 
-  const handleDropdownChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
+  const handleStockSubmit = () => {
+    const numericValue = parseInt(stockQuantity, 10);
+    if (isNaN(numericValue) || numericValue <= 0) {
+      Swal.fire(
+        "Invalid Quantity",
+        "Please enter a valid quantity greater than 0",
+        "error"
+      );
+      return;
+    }
+    addStock(id, numericValue).then(() => {
+      setIsStockModalOpen(false);
+      setStockQuantity(0);
+      // Refresh product data after stock update
+      getProductData(id, setProductData);
     });
   };
-  const handleSubmit = (e) => {
-    e.preventDefault();
-  };
+
   const handleAddDiscountDetail = () => {
     setIsDiscountModalOpen(true);
   };
+
   const closeDiscountModal = () => {
     setIsDiscountModalOpen(false);
   };
-  console.log(productData);
+
+  // Early return to prevent rendering if productData is not loaded yet
+  if (!productData) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-xl font-semibold">Loading product details...</p>
+      </div>
+    );
+  }
+
   return (
     <>
-      <div className="bg-gray-100 p-4 flex justify-between">
-        <h2 className="text-2xl font-bold mb-1">View or Edit Products</h2>
+      {/* Top Header */}
+      <div className="bg-gray-100 p-4 flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold mb-1">Product Details</h2>
+          <p className="mt-2">
+            Available Stock: {productData?.totalProducts || "Not Added"}
+          </p>
+        </div>
         <div className="flex space-x-4">
-          <h1 className="mt-2">Available Stock {productData?.totalProducts}</h1>
           <button
             className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
             onClick={handleStockUpdate}
@@ -85,151 +113,179 @@ const ProductDetails = () => {
           >
             Add Discount Detail
           </button>
+          {/* <button
+            className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded"
+            onClick={() => setIsEditModalOpen(true)}
+          >
+            Edit Product
+          </button> */}
         </div>
       </div>
-      <div className="max-w-6xl mx-auto p-6 bg-gradient-to-r from-white to-gray-100 shadow-md rounded-lg">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-indigo-200"
-                placeholder="Enter product name"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Price
-              </label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-indigo-200"
-                placeholder="Enter product price"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Image
-              </label>
-              <input
-                type="file"
-                name="image"
-                onChange={handleFileChange}
-                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-indigo-200"
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Color
-              </label>
-              <input
-                type="text"
-                name="color"
-                value={formData.color}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-indigo-200"
-                placeholder="Enter product color"
-              />
+      {/* Elegant Product Details Card */}
+      <div className="max-w-6xl mx-auto my-6 p-6 bg-white shadow-lg rounded-lg">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Product Information */}
+          <div className="md:w-full">
+            <h2 className="text-3xl font-bold mb-4">
+              {formData.name || "Unnamed Product"}
+            </h2>
+            <p className="text-xl font-semibold mb-2">
+              {formData.currency} {formData.price || "N/A"}
+            </p>
+            <div className="mb-2 flex items-center">
+              <span className="font-semibold mr-2">Colors:</span>
+              {productData?.colors && productData.colors.length > 0 ? (
+                productData.colors.map((colorObj, index) => (
+                  <div
+                    key={colorObj.id || index}
+                    className="w-6 h-6 rounded-full border border-gray-300 mr-1"
+                    style={{ backgroundColor: colorObj.color || "transparent" }}
+                    title={colorObj.color || "No Color"}
+                  ></div>
+                ))
+              ) : (
+                <span>N/A</span>
+              )}
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleDropdownChange}
-                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-indigo-200"
+            <p className="mb-2">
+              <span className="font-semibold">Status: </span>
+              <span
+                className={`font-semibold ${
+                  formData.status ? "text-green-600" : "text-red-600"
+                }`}
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Show on Home Screen
-              </label>
-              <select
-                name="homeScreen"
-                value={formData.homeScreen}
-                onChange={handleDropdownChange}
-                className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-indigo-200"
-              >
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-            </div>
+                {formData.status ? "Active" : "Inactive"}
+              </span>
+            </p>
+            <p className="mb-2">
+              <span className="font-semibold">Weight: </span>
+              {formData.weight || "N/A"}
+            </p>
+            <p className="mb-2">
+              <span className="font-semibold">Dimensions: </span>
+              {formData.dimension || "N/A"}
+            </p>
           </div>
+        </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-indigo-200"
-              rows="4"
-              placeholder="Enter product description"
-            ></textarea>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
+        {/* Tabbed Descriptions */}
+        <div className="mt-6 border-t pt-4">
+          <div className="flex border-b border-gray-300">
+            <button
+              className={`py-2 px-4 font-medium ${
+                activeTab === "shortDescription"
+                  ? "border-b-2 border-blue-500 text-blue-500"
+                  : "text-gray-600"
+              }`}
+              onClick={() => setActiveTab("shortDescription")}
+            >
               Short Description
-            </label>
-            <textarea
-              name="shortDescription"
-              value={formData.shortDescription}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-indigo-200"
-              rows="3"
-              placeholder="Enter short description"
-            ></textarea>
+            </button>
+            <button
+              className={`py-2 px-4 font-medium ${
+                activeTab === "description"
+                  ? "border-b-2 border-blue-500 text-blue-500"
+                  : "text-gray-600"
+              }`}
+              onClick={() => setActiveTab("description")}
+            >
+              Description
+            </button>
+            <button
+              className={`py-2 px-4 font-medium ${
+                activeTab === "addiotionalInformation"
+                  ? "border-b-2 border-blue-500 text-blue-500"
+                  : "text-gray-600"
+              }`}
+              onClick={() => setActiveTab("addiotionalInformation")}
+            >
+              Additional Info
+            </button>
           </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Additional Information
-            </label>
-            <textarea
-              name="addiotionalInformation"
-              value={formData.addiotionalInformation}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-indigo-200"
-              rows="3"
-              placeholder="Enter additional information"
-            ></textarea>
+          <div className="p-4">
+            {activeTab === "shortDescription" && (
+              <p>
+                {formData.shortDescription || "No short description available"}
+              </p>
+            )}
+            {activeTab === "description" && (
+              <p>{formData.description || "No description available"}</p>
+            )}
+            {activeTab === "addiotionalInformation" && (
+              <p>
+                {formData.addiotionalInformation ||
+                  "No additional information available"}
+              </p>
+            )}
           </div>
-
-          <button
-            type="submit"
-            className="w-full py-2 bg-blue-500 text-white font-semibold text-sm rounded-md shadow hover:bg-blue-600 transition focus:ring focus:ring-indigo-300 "
-          >
-            Save Changes
-          </button>
-        </form>
+        </div>
       </div>
-      {isDiscountModalOpen && (
-        <DiscountModal
-          isOpen={isDiscountModalOpen}
-          onClose={closeDiscountModal}
-          productId={id}
-        />
+
+      {/* Product Images by Color Section */}
+      {productData?.colors && productData.colors.length > 0 && (
+        <div className="max-w-6xl mx-auto mt-6 p-6 bg-white shadow-md rounded-lg">
+          <h2 className="text-2xl font-bold mb-4">Product Images by Color</h2>
+          {/* Color Swatches */}
+          <div className="flex space-x-4 mb-4">
+            {productData.colors.map((colorObj, index) => (
+              <div
+                key={colorObj.id || index}
+                className={`w-10 h-10 rounded-full cursor-pointer border-2 ${
+                  selectedColorIndex === index
+                    ? "border-blue-500"
+                    : "border-transparent"
+                }`}
+                style={{ backgroundColor: colorObj.color || "transparent" }}
+                onClick={() => {
+                  setSelectedColorIndex(index);
+                  setSelectedImageIndex(0);
+                }}
+                title={colorObj.color || "No Color"}
+              ></div>
+            ))}
+          </div>
+          {/* Main Image and Thumbnails for Selected Color */}
+          {productData.colors[selectedColorIndex] &&
+            productData.colors[selectedColorIndex].image &&
+            productData.colors[selectedColorIndex].image.length > 0 && (
+              <div>
+                {/* Main Image */}
+                <img
+                  src={
+                    productData.colors[selectedColorIndex].image[
+                      selectedImageIndex
+                    ]
+                  }
+                  alt={`Main view for ${
+                    productData.colors[selectedColorIndex].color || "Color"
+                  }`}
+                  className="w-[450px] h-[450px] object-cover rounded"
+                />
+                {/* Thumbnails */}
+                <div className="mt-2 flex space-x-2">
+                  {productData.colors[selectedColorIndex].image.map(
+                    (imgUrl, idx) => (
+                      <img
+                        key={idx}
+                        src={imgUrl}
+                        alt={`Thumbnail ${idx}`}
+                        className={`w-20 h-20 object-cover rounded cursor-pointer ${
+                          selectedImageIndex === idx
+                            ? "border-2 border-blue-500"
+                            : "border"
+                        }`}
+                        onClick={() => setSelectedImageIndex(idx)}
+                      />
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+        </div>
       )}
+
+      {/* Stock Modal */}
       {isStockModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-96">
@@ -240,7 +296,7 @@ const ProductDetails = () => {
               type="number"
               className="w-full p-2 border border-gray-300 rounded-md mb-4"
               value={stockQuantity}
-              onChange={(e) => setStockQuantity(e.target.value)}
+              onChange={handleStockChange}
               placeholder="Enter quantity"
             />
             <div className="flex justify-end space-x-2">
@@ -260,6 +316,21 @@ const ProductDetails = () => {
           </div>
         </div>
       )}
+
+      {isDiscountModalOpen && (
+        <DiscountModal
+          isOpen={isDiscountModalOpen}
+          onClose={closeDiscountModal}
+          productId={id}
+        />
+      )}
+      {/* {isEditModalOpen && (
+        <ProductModal
+          showModal={isEditModalOpen}
+          setShowModal={setIsEditModalOpen}
+          productToEdit={productData}
+        />
+      )} */}
     </>
   );
 };

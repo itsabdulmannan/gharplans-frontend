@@ -73,7 +73,7 @@ function Review() {
 
   const getReviewsForTab = () => {
     switch (activeTab) {
-      case "approved": // Changed from accepted to approved
+      case "approved":
         return approvedReviews;
       case "rejected":
         return rejectedReviews;
@@ -102,9 +102,9 @@ function Review() {
               Pending
             </button>
             <button
-              onClick={() => setActiveTab("approved")} // Changed from accepted to approved
+              onClick={() => setActiveTab("approved")} 
               className={`${
-                activeTab === "approved" // Changed from accepted to approved
+                activeTab === "approved"
                   ? "text-green-500 border-b-2 border-green-500"
                   : ""
               } px-4 py-2`}
@@ -151,12 +151,12 @@ function Review() {
                   <p className="text-gray-600 mb-4">{review.review}</p>
                   <p className="text-sm text-gray-500 mb-4">
                     Product:{" "}
-                    <span className="font-bold">{review.product.name}</span>
+                    <span className="font-bold">{review?.product?.name}</span>
                   </p>
                   {activeTab === "pending" && (
                     <div className="flex justify-between">
                       <button
-                        onClick={() => handleButtonClick("accept", review)} // Changed from accept to approved
+                        onClick={() => handleButtonClick("accept", review)}
                         className="bg-green-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-600"
                       >
                         Approve

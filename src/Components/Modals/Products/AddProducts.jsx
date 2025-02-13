@@ -21,7 +21,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
   const { addProduct, updateProduct, loading, error } = useProducts();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ---- STEP 1: Add a new "currency" field to the initial formData ----
+  // Update initial formData: dimensions is now a string
   const [formData, setFormData] = useState({
     categoryId: "",
     name: "",
@@ -31,9 +31,9 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
     additionalInformation: "",
     status: "",
     weight: "",
-    dimensions: [""],
+    dimensions: "",
     colors: [],
-    currency: "", // <-- new field
+    currency: "", // new field
   });
 
   const fileInputRefs = useRef([]);
@@ -42,14 +42,14 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
     if (productToEdit) {
       setFormData({
         ...productToEdit,
-        dimensions: productToEdit.dimensions || [""],
+        // If the existing product has dimensions, ensure it is a string
+        dimensions: productToEdit.dimensions || "",
         colors: productToEdit.colors
           ? productToEdit.colors.map((color) => ({
               name: color.name || "",
               images: color.images || [],
             }))
           : [],
-        // If the existing product has a "currency" value, set it here; otherwise, fallback
         currency: productToEdit.currency || "",
       });
     } else {
@@ -62,9 +62,9 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
         additionalInformation: "",
         status: "",
         weight: "",
-        dimensions: [""],
+        dimensions: "", // default blank string
         colors: [],
-        currency: "", // default blank
+        currency: "",
       });
     }
   }, [productToEdit]);
@@ -144,27 +144,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
     });
   };
 
-  // Dimensions array logic
-  const handleDimensionChange = (index, value) => {
-    setFormData((prev) => {
-      const updatedDimensions = [...prev.dimensions];
-      updatedDimensions[index] = value;
-      return { ...prev, dimensions: updatedDimensions };
-    });
-  };
-  const addDimension = () => {
-    setFormData((prev) => ({
-      ...prev,
-      dimensions: [...prev.dimensions, ""],
-    }));
-  };
-  const removeDimension = (index) => {
-    setFormData((prev) => {
-      const updatedDimensions = prev.dimensions.filter((_, i) => i !== index);
-      return { ...prev, dimensions: updatedDimensions };
-    });
-  };
-
   // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -181,12 +160,8 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
             });
           }
         });
-      } else if (key === "dimensions") {
-        formData.dimensions.forEach((dimVal, dimIndex) => {
-          data.append(`dimensions[${dimIndex}]`, dimVal);
-        });
       } else {
-        // For everything else, including "currency", "categoryId", etc.
+        // For everything else, including "dimensions" as a string
         data.append(key, formData[key]);
       }
     });
@@ -332,7 +307,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
               />
             </div>
 
-            {/* --- NEW: CURRENCY Field --- */}
+            {/* CURRENCY Field */}
             <div>
               <input
                 type="text"
@@ -343,7 +318,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 className="w-full p-2 border border-gray-300 rounded"
               />
             </div>
-            <div></div> {/* Just to fill the 2-column gap. Delete or style as needed. */}
+            <div></div> {/* Filler for 2-column layout */}
 
             {/* Colors & Images Section (full width) */}
             <div className="col-span-2">
@@ -403,13 +378,11 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                           key={imgIndex}
                           className="border rounded p-2 flex items-center"
                         >
-                          {/* Optional Preview */}
                           <img
                             src={URL.createObjectURL(file)}
                             alt="preview"
                             className="w-16 h-16 object-cover mr-2"
                           />
-
                           <span className="mr-2 text-sm">{file.name}</span>
                           <button
                             type="button"
@@ -438,33 +411,14 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
             {/* Dimensions Section (full width) */}
             <div className="col-span-2 mt-4">
               <h3 className="font-semibold mb-2">Dimensions</h3>
-              {formData.dimensions.map((dimension, index) => (
-                <div key={index} className="flex flex-row items-center mb-2">
-                  <input
-                    type="text"
-                    value={dimension}
-                    onChange={(e) =>
-                      handleDimensionChange(index, e.target.value)
-                    }
-                    placeholder={`Dimension ${index + 1}`}
-                    className="w-full p-2 border border-gray-300 rounded"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeDimension(index)}
-                    className="ml-2 text-red-500 hover:text-red-700"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addDimension}
-                className="bg-blue-500 text-white px-4 py-2 rounded"
-              >
-                Add Dimension
-              </button>
+              <input
+                type="text"
+                name="dimensions"
+                value={formData.dimensions}
+                onChange={handleChange}
+                placeholder="Dimensions"
+                className="w-full p-2 border border-gray-300 rounded"
+              />
             </div>
           </div>
 
