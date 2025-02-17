@@ -13,6 +13,7 @@ import { FaCity } from "react-icons/fa";
 import { MdOutlineCategory } from "react-icons/md";
 import { LuTextQuote } from "react-icons/lu";
 import { BiSolidCarousel } from "react-icons/bi";
+import { MdOutlineFeaturedPlayList } from "react-icons/md";
 import Dashboard from "../Containers/Dashboard/Dashboard.jsx";
 import Products from "../Containers/Products/ProductList/Products.jsx";
 import Categories from "../Containers/Categories/CategoriesList/Categories.jsx";
@@ -33,6 +34,7 @@ import Profile from "../Containers/Profile/Profile.jsx";
 import Cities from "../Containers/Cities/Cities.jsx";
 import QuotationPage from "../Containers/Quotation/QuotationPage.jsx";
 import CarouselManagement from "../Containers/CarouselProducts/CarouselProducts.jsx";
+import FeaturedProductsAdmin from "../Containers/FeaturedProducts/FeaturedProductsAdmin.jsx";
 
 const routes = [
   {
@@ -154,6 +156,12 @@ const routes = [
     element: CarouselManagement,
     label: "Change Carousel Items",
     icon: <BiSolidCarousel size={30} />,
+  },
+  {
+    path: "/add-featured-product",
+    element: FeaturedProductsAdmin,
+    label: "Add Featured Product",
+    icon: <MdOutlineFeaturedPlayList size={30} />,
   },
   {
     path: "/social-links",

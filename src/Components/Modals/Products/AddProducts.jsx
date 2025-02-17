@@ -17,33 +17,34 @@ const checkImageDimension = (file) => {
   });
 };
 
+// Define the initial form data including the new weightUnit field
+const initialFormData = {
+  categoryId: "",
+  name: "",
+  description: "",
+  price: "",
+  shortDescription: "",
+  additionalInformation: "",
+  status: "",
+  weight: "",
+  weightUnit: "", // new field for weight unit
+  dimensions: "",
+  colors: [],
+  currency: "", // currency now only accepts "$" and "PKR"
+};
+
 function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
   const { addProduct, updateProduct, loading, error } = useProducts();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Update initial formData: dimensions is now a string
-  const [formData, setFormData] = useState({
-    categoryId: "",
-    name: "",
-    description: "",
-    price: "",
-    shortDescription: "",
-    additionalInformation: "",
-    status: "",
-    weight: "",
-    dimensions: "",
-    colors: [],
-    currency: "", // new field
-  });
-
+  const [formData, setFormData] = useState(initialFormData);
   const fileInputRefs = useRef([]);
 
   useEffect(() => {
     if (productToEdit) {
       setFormData({
         ...productToEdit,
-        // If the existing product has dimensions, ensure it is a string
         dimensions: productToEdit.dimensions || "",
+        weightUnit: productToEdit.weightUnit || "", // include weight unit if available
         colors: productToEdit.colors
           ? productToEdit.colors.map((color) => ({
               name: color.name || "",
@@ -53,21 +54,15 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
         currency: productToEdit.currency || "",
       });
     } else {
-      setFormData({
-        categoryId: "",
-        name: "",
-        description: "",
-        price: "",
-        shortDescription: "",
-        additionalInformation: "",
-        status: "",
-        weight: "",
-        dimensions: "", // default blank string
-        colors: [],
-        currency: "",
-      });
+      setFormData(initialFormData);
     }
   }, [productToEdit]);
+
+  // Close handler to reset form and close the modal
+  const handleClose = () => {
+    setFormData(initialFormData);
+    setShowModal(false);
+  };
 
   // Handle basic text input changes
   const handleChange = (e) => {
@@ -75,7 +70,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // For color name
+  // For color name change
   const handleColorNameChange = (index, value) => {
     setFormData((prev) => {
       const updatedColors = [...prev.colors];
@@ -91,7 +86,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
     }
   };
 
-  // Validate each image as 450x450
+  // Validate each image as 450x450 and update color images
   const handleColorImageChange = async (colorIndex, files) => {
     if (!files || files.length === 0) return;
 
@@ -115,7 +110,10 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
       setFormData((prev) => {
         const updatedColors = [...prev.colors];
         const existingImages = updatedColors[colorIndex].images || [];
-        updatedColors[colorIndex].images = [...existingImages, ...validatedFiles];
+        updatedColors[colorIndex].images = [
+          ...existingImages,
+          ...validatedFiles,
+        ];
         return { ...prev, colors: updatedColors };
       });
     }
@@ -130,13 +128,15 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
     });
   };
 
-  // Add/remove entire color rows
+  // Add a new color row
   const addColor = () => {
     setFormData((prev) => ({
       ...prev,
       colors: [...prev.colors, { name: "", images: [] }],
     }));
   };
+
+  // Remove a color row
   const removeColor = (index) => {
     setFormData((prev) => {
       const updatedColors = prev.colors.filter((_, i) => i !== index);
@@ -161,7 +161,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
           }
         });
       } else {
-        // For everything else, including "dimensions" as a string
         data.append(key, formData[key]);
       }
     });
@@ -172,7 +171,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
       } else {
         await addProduct(data);
       }
-      setShowModal(false);
+      handleClose(); // Reset form and close modal after submission
     } catch (err) {
       console.error("Error submitting product:", err);
     } finally {
@@ -193,7 +192,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
 
         <button
           className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-5xl"
-          onClick={() => setShowModal(false)}
+          onClick={handleClose}
         >
           ×
         </button>
@@ -220,7 +219,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 ))}
               </select>
             </div>
-
             {/* Product Name */}
             <div>
               <input
@@ -233,7 +231,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 required
               />
             </div>
-
             {/* Description (full width) */}
             <div className="col-span-2">
               <textarea
@@ -245,7 +242,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 required
               />
             </div>
-
             {/* Price */}
             <div>
               <input
@@ -258,7 +254,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 required
               />
             </div>
-
             {/* Short Description */}
             <div>
               <input
@@ -270,7 +265,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 className="w-full p-2 border border-gray-300 rounded"
               />
             </div>
-
             {/* Additional Information (full width) */}
             <div className="col-span-2">
               <textarea
@@ -281,7 +275,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 className="w-full p-2 border border-gray-300 rounded"
               />
             </div>
-
             {/* Status */}
             <div>
               <select
@@ -294,32 +287,40 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 <option value="false">Inactive</option>
               </select>
             </div>
-
-            {/* Weight */}
-            <div>
+            {/* Weight and Weight Unit */}
+            <div className="flex space-x-2">
               <input
                 type="number"
                 name="weight"
                 value={formData.weight}
                 onChange={handleChange}
                 placeholder="Product Weight"
-                className="w-full p-2 border border-gray-300 rounded"
+                className="w-1/2 p-2 border border-gray-300 rounded"
               />
-            </div>
-
-            {/* CURRENCY Field */}
-            <div>
               <input
                 type="text"
+                name="weightUnit"
+                value={formData.weightUnit}
+                onChange={handleChange}
+                placeholder="Unit"
+                className="w-1/2 p-2 border border-gray-300 rounded"
+              />
+            </div>
+            {/* Currency */}
+            <div>
+              <select
                 name="currency"
                 value={formData.currency}
                 onChange={handleChange}
-                placeholder="Currency (e.g. USD)"
                 className="w-full p-2 border border-gray-300 rounded"
-              />
+                required
+              >
+                <option value="">Select Currency</option>
+                <option value="$">$</option>
+                <option value="PKR">PKR</option>
+              </select>
             </div>
             <div></div> {/* Filler for 2-column layout */}
-
             {/* Colors & Images Section (full width) */}
             <div className="col-span-2">
               <h3 className="font-semibold mb-2">
@@ -338,7 +339,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                       placeholder="Color Name (e.g. Red)"
                       className="w-1/3 p-2 border border-gray-300 rounded"
                     />
-
                     {/* Add Image (Plus Icon) */}
                     <button
                       type="button"
@@ -347,7 +347,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                     >
                       + Add Image
                     </button>
-
                     {/* Hidden File Input */}
                     <input
                       type="file"
@@ -359,7 +358,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                         handleColorImageChange(index, e.target.files)
                       }
                     />
-
                     {/* Remove entire color */}
                     <button
                       type="button"
@@ -369,7 +367,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                       Remove Color
                     </button>
                   </div>
-
                   {/* Display the chosen images for this color */}
                   {color.images && color.images.length > 0 && (
                     <div className="flex flex-wrap mt-2 gap-3">
@@ -407,7 +404,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 + Add New Color
               </button>
             </div>
-
             {/* Dimensions Section (full width) */}
             <div className="col-span-2 mt-4">
               <h3 className="font-semibold mb-2">Dimensions</h3>
@@ -426,7 +422,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
           <div className="flex justify-end mt-4">
             <button
               type="button"
-              onClick={() => setShowModal(false)}
+              onClick={handleClose}
               className="bg-gray-500 text-white px-4 py-2 rounded mr-2"
               disabled={loading}
             >

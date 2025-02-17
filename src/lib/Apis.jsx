@@ -146,4 +146,11 @@ export const Apis = {
   getProducts: () => Request.get("/product?offset=0&limit=1000"),
   getCarouselItems: () => Request.get("/product/carousel-products"),
   updateCarouselItems: (data) => Request.put("product/update-carousel", data),
+  addFeaturedProduct: (data) => Request.post("/product/similar-products", data),
+  getFeaturedProductsRelations: (id) =>
+    Request.get(`/product/product-relation/${id}`),
+  deleteLinkedProduct: (id) =>
+    Request.delete(`/product/remove-similar-product/${id}`),
+  getUnlinkedProducts: (id) =>
+    Request.get(`/product/unlinked-feature-products/${id}`),
 };

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { mockProducts } from "../../../Components/Data/MockData";
 import DiscountModal from "../../../Components/Modals/DiscounTier/DiscountTier";
-import ProductModal from "../../../Components/Modals/Products/AddProducts"; // Import your modal component
+import ProductModal from "../../../Components/Modals/Products/AddProducts";
 import { useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import { useDiscountTier } from "./useHook";
+import FeaturedProductModal from "../../../Components/Modals/FeaturedProducts/FeaturedProduct";
 
 const ProductDetails = () => {
   const { showOnHomeScreen, getProductData, addStock } = useDiscountTier();
@@ -15,14 +16,15 @@ const ProductDetails = () => {
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // NEW: handle featured modal state
+  const [isFeaturedModalOpen, setIsFeaturedModalOpen] = useState(false);
+
   const [stockQuantity, setStockQuantity] = useState(0);
-  // State for color and image selection (for the image gallery)
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  // State for tab selection in descriptions
   const [activeTab, setActiveTab] = useState("description");
 
-  // Only depend on the id so that updating the input doesn't trigger the API
   useEffect(() => {
     if (id) {
       getProductData(id, setProductData);
@@ -32,7 +34,6 @@ const ProductDetails = () => {
   useEffect(() => {
     if (productData) {
       setFormData(productData);
-      // Reset gallery selection when new product data is loaded
       if (productData.colors && productData.colors.length > 0) {
         setSelectedColorIndex(0);
         setSelectedImageIndex(0);
@@ -45,10 +46,9 @@ const ProductDetails = () => {
     setIsStockModalOpen(true);
   };
 
-  // Sanitize input: remove leading zeros (e.g., "012" becomes "12")
   const handleStockChange = (e) => {
     let value = e.target.value;
-    // Remove leading zeros, but leave "0" if that's the only digit
+    // Remove leading zeros, but leave "0" if it's the only digit
     if (value.length > 1 && value.startsWith("0")) {
       value = value.replace(/^0+/, "");
     }
@@ -76,12 +76,18 @@ const ProductDetails = () => {
   const handleAddDiscountDetail = () => {
     setIsDiscountModalOpen(true);
   };
-
   const closeDiscountModal = () => {
     setIsDiscountModalOpen(false);
   };
 
-  // Early return to prevent rendering if productData is not loaded yet
+  // NEW: featured product handlers
+  const handleAddFeaturedProduct = () => {
+    setIsFeaturedModalOpen(true);
+  };
+  const closeFeaturedModal = () => {
+    setIsFeaturedModalOpen(false);
+  };
+
   if (!productData) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -113,16 +119,17 @@ const ProductDetails = () => {
           >
             Add Discount Detail
           </button>
-          {/* <button
-            className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded"
-            onClick={() => setIsEditModalOpen(true)}
+          {/* NEW: Add Featured Product Button */}
+          <button
+            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+            onClick={handleAddFeaturedProduct}
           >
-            Edit Product
-          </button> */}
+            Add Featured Product
+          </button>
         </div>
       </div>
 
-      {/* Elegant Product Details Card */}
+      {/* Main Product Info */}
       <div className="max-w-6xl mx-auto my-6 p-6 bg-white shadow-lg rounded-lg">
         <div className="flex flex-col md:flex-row gap-6">
           {/* Product Information */}
@@ -222,7 +229,7 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* Product Images by Color Section */}
+      {/* Product Images by Color */}
       {productData?.colors && productData.colors.length > 0 && (
         <div className="max-w-6xl mx-auto mt-6 p-6 bg-white shadow-md rounded-lg">
           <h2 className="text-2xl font-bold mb-4">Product Images by Color</h2>
@@ -250,7 +257,6 @@ const ProductDetails = () => {
             productData.colors[selectedColorIndex].image &&
             productData.colors[selectedColorIndex].image.length > 0 && (
               <div>
-                {/* Main Image */}
                 <img
                   src={
                     productData.colors[selectedColorIndex].image[
@@ -262,7 +268,6 @@ const ProductDetails = () => {
                   }`}
                   className="w-[450px] h-[450px] object-cover rounded"
                 />
-                {/* Thumbnails */}
                 <div className="mt-2 flex space-x-2">
                   {productData.colors[selectedColorIndex].image.map(
                     (imgUrl, idx) => (
@@ -317,6 +322,7 @@ const ProductDetails = () => {
         </div>
       )}
 
+      {/* Discount Modal */}
       {isDiscountModalOpen && (
         <DiscountModal
           isOpen={isDiscountModalOpen}
@@ -324,6 +330,18 @@ const ProductDetails = () => {
           productId={id}
         />
       )}
+
+      {/* NEW: Featured Modal */}
+      {isFeaturedModalOpen && (
+        <FeaturedProductModal
+          isOpen={isFeaturedModalOpen}
+          onClose={closeFeaturedModal}
+          productId={id}
+          // You can pass additional props if you want to fetch the list
+          // of products or handle the add/delete logic inside the modal.
+        />
+      )}
+
       {/* {isEditModalOpen && (
         <ProductModal
           showModal={isEditModalOpen}
