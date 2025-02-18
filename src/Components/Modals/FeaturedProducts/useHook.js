@@ -4,7 +4,7 @@ export const featuredProductHook = () => {
     const getAllProducts = async (setProductsData, productId) => {
         try {
             const respsone = await Apis.getUnlinkedProducts(productId);
-            setProductsData(respsone.data.products);
+            setProductsData(respsone.data.data);
             return respsone.data.data
         } catch (error) {
             console.log(error);

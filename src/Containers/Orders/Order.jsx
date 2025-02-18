@@ -123,7 +123,7 @@ function Order() {
                 </tr>
               </thead>
               <tbody>
-                {filteredData.length > 0 ? (
+                {filteredData?.length > 0 ? (
                   filteredData.map((row, index) => (
                     <tr
                       key={row.id}

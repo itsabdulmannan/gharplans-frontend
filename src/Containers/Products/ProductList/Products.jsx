@@ -158,9 +158,6 @@ function Products() {
                 Sr. No.
               </th>
               <th className="px-6 py-3 text-left text-sm font-semibold">
-                Image
-              </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">
                 Category
               </th>
               <th className="px-6 py-3 text-left text-sm font-semibold">
@@ -187,7 +184,7 @@ function Products() {
               >
                 <td className="px-6 py-4 text-sm text-gray-700">{index + 1}</td>
 
-                <td className="px-6 py-4">
+                {/* <td className="px-6 py-4">
                   {product.colors?.[0]?.images?.[0] ? (
                     <img
                       src={product.colors[0].images[0]}
@@ -197,7 +194,7 @@ function Products() {
                   ) : (
                     <span>No Image</span>
                   )}
-                </td>
+                </td> */}
 
                 {/* Category */}
                 <td className="px-6 py-4 text-sm text-gray-600">
