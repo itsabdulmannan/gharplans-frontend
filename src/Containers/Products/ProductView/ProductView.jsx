@@ -8,16 +8,21 @@ import { useDiscountTier } from "./useHook";
 import FeaturedProductModal from "../../../Components/Modals/FeaturedProducts/FeaturedProduct";
 
 const ProductDetails = () => {
-  const { showOnHomeScreen, getProductData, addStock } = useDiscountTier();
+  const {
+    showOnHomeScreen,
+    getProductData,
+    addStock,
+    showProductOnHomeScreen,
+    getCategories,
+  } = useDiscountTier();
   const [productData, setProductData] = useState(null);
+  const [categories, setCategories] = useState([]);
   const location = useLocation();
   const { id } = location?.state || {};
   const [formData, setFormData] = useState({ ...mockProducts });
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  // NEW: handle featured modal state
   const [isFeaturedModalOpen, setIsFeaturedModalOpen] = useState(false);
 
   const [stockQuantity, setStockQuantity] = useState(0);
@@ -28,6 +33,7 @@ const ProductDetails = () => {
   useEffect(() => {
     if (id) {
       getProductData(id, setProductData);
+      getCategories(setCategories);
     }
   }, [id]);
 
@@ -46,9 +52,26 @@ const ProductDetails = () => {
     setIsStockModalOpen(true);
   };
 
+  const handleHomeScreenItem = () => {
+    if (!productData?.id) return;
+
+    const newStatus = !productData.homeScreen;
+
+    showProductOnHomeScreen(productData.id, newStatus ? 1 : 0)
+      .then(() => {
+        getProductData(productData.id, setProductData);
+      })
+      .catch((error) => {
+        console.error("Failed to update home screen status:", error);
+      });
+  };
+
+  const handleEditClick = () => {
+    setIsEditModalOpen(true);
+  };
+
   const handleStockChange = (e) => {
     let value = e.target.value;
-    // Remove leading zeros, but leave "0" if it's the only digit
     if (value.length > 1 && value.startsWith("0")) {
       value = value.replace(/^0+/, "");
     }
@@ -68,7 +91,6 @@ const ProductDetails = () => {
     addStock(id, numericValue).then(() => {
       setIsStockModalOpen(false);
       setStockQuantity(0);
-      // Refresh product data after stock update
       getProductData(id, setProductData);
     });
   };
@@ -80,7 +102,6 @@ const ProductDetails = () => {
     setIsDiscountModalOpen(false);
   };
 
-  // NEW: featured product handlers
   const handleAddFeaturedProduct = () => {
     setIsFeaturedModalOpen(true);
   };
@@ -96,6 +117,12 @@ const ProductDetails = () => {
     );
   }
 
+  const handleProductModalSuccess = () => {
+    if (id) {
+      getProductData(id, setProductData);
+    }
+  };
+
   return (
     <>
       {/* Top Header */}
@@ -107,6 +134,15 @@ const ProductDetails = () => {
           </p>
         </div>
         <div className="flex space-x-4">
+          <button
+            className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+            onClick={handleHomeScreenItem}
+          >
+            {productData?.homeScreen
+              ? "Hide from home screen"
+              : "Show on home screen"}
+          </button>
+          <button onClick={handleEditClick}>Edit</button>
           <button
             className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
             onClick={handleStockUpdate}
@@ -221,7 +257,7 @@ const ProductDetails = () => {
             )}
             {activeTab === "addiotionalInformation" && (
               <p>
-                {formData.addiotionalInformation ||
+                {formData.additionalInformation ||
                   "No additional information available"}
               </p>
             )}
@@ -337,18 +373,18 @@ const ProductDetails = () => {
           isOpen={isFeaturedModalOpen}
           onClose={closeFeaturedModal}
           productId={id}
-          // You can pass additional props if you want to fetch the list
-          // of products or handle the add/delete logic inside the modal.
         />
       )}
 
-      {/* {isEditModalOpen && (
+      {isEditModalOpen && (
         <ProductModal
+          categories={categories}
+          productId={productData?.id}
           showModal={isEditModalOpen}
           setShowModal={setIsEditModalOpen}
-          productToEdit={productData}
+          onSuccess={handleProductModalSuccess}
         />
-      )} */}
+      )}
     </>
   );
 };

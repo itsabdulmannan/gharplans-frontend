@@ -65,7 +65,6 @@ export const useDiscountTier = () => {
         try {
             const response = await Apis.getProductById(productId);
             setProductData(response.data);
-            console.log(response.data);
             return response.data.homeScreen;
         } catch (error) {
             return error;
@@ -91,5 +90,27 @@ export const useDiscountTier = () => {
             return error
         }
     }
-    return { getDiscountTier, addDiscountTier, delteDiscountTier, showOnHomeScreen, getProductData, addStock };
+    const showProductOnHomeScreen = async (productId, homePage) => {
+        try {
+            const data = {
+                productId,
+                homePage: homePage ? 1 : 0
+            };
+            const response = await Apis.showOnHomeScreen(data);
+            return response;
+        } catch (error) {
+            console.error("Error updating home screen status:", error);
+            return error;
+        }
+    };
+    const getCategories = async (setCategories) => {
+        try {
+            const response = await Apis.getCategories();
+            setCategories(response.data.categories);
+        } catch (error) {
+            return error
+        }
+    }
+
+    return { getDiscountTier, addDiscountTier, delteDiscountTier, showOnHomeScreen, getProductData, addStock, showProductOnHomeScreen, getCategories };
 }

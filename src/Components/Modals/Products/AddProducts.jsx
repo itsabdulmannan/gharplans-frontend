@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useProducts } from "../../../Containers/Products/ProductList/useHook";
+import { productsHook } from "./useHook";
 
-// Helper function to validate image dimensions
 const checkImageDimension = (file) => {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -17,7 +17,6 @@ const checkImageDimension = (file) => {
   });
 };
 
-// Define the initial form data including the new weightUnit field
 const initialFormData = {
   categoryId: "",
   name: "",
@@ -25,52 +24,86 @@ const initialFormData = {
   price: "",
   shortDescription: "",
   additionalInformation: "",
-  status: "",
+  status: "true",
   weight: "",
-  weightUnit: "", // new field for weight unit
+  unit: "",
   dimensions: "",
   colors: [],
-  currency: "", // currency now only accepts "$" and "PKR"
+  currency: "",
 };
 
-function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
+function ProductModal({
+  categories,
+  showModal,
+  setShowModal,
+  productToEdit,
+  productId,
+  onSuccess,
+}) {
+  const { getProductById } = productsHook();
   const { addProduct, updateProduct, loading, error } = useProducts();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [formData, setFormData] = useState(initialFormData);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const fileInputRefs = useRef([]);
-
   useEffect(() => {
-    if (productToEdit) {
-      setFormData({
-        ...productToEdit,
-        dimensions: productToEdit.dimensions || "",
-        weightUnit: productToEdit.weightUnit || "", // include weight unit if available
-        colors: productToEdit.colors
-          ? productToEdit.colors.map((color) => ({
-              name: color.name || "",
-              images: color.images || [],
-            }))
-          : [],
-        currency: productToEdit.currency || "",
-      });
-    } else {
-      setFormData(initialFormData);
-    }
-  }, [productToEdit]);
+    const loadProduct = async () => {
+      try {
+        if (productId && !productToEdit) {
+          const dataFromApi = await getProductById(productId);
+          if (dataFromApi) {
+            setFormData({
+              ...dataFromApi,
+              categoryId: dataFromApi.category?.categoryId || "",
+              dimensions: dataFromApi.dimension || "",
+              unit: dataFromApi.unit || "",
+              colors: Array.isArray(dataFromApi.colors)
+                ? dataFromApi.colors.map((color) => ({
+                    name: color.color || "",
+                    images: color.image || [],
+                  }))
+                : [],
+              currency: dataFromApi.currency || "",
+            });
+          }
+        } else if (productToEdit) {
+          setFormData({
+            ...productToEdit,
+            categoryId: productToEdit.category?.categoryId || "",
+            dimensions: productToEdit.dimension || "",
+            unit: productToEdit.unit || "",
+            colors: Array.isArray(productToEdit.colors)
+              ? productToEdit.colors.map((color) => ({
+                  name: color.color || "",
+                  images: color.image || [],
+                }))
+              : [],
+            currency: productToEdit.currency || "",
+          });
+        } else {
+          setFormData(initialFormData);
+        }
+      } catch (error) {
+        console.error("Error loading product:", error);
+      }
+    };
 
-  // Close handler to reset form and close the modal
+    if (showModal) {
+      loadProduct();
+    }
+  }, [showModal, productId, productToEdit]);
+
   const handleClose = () => {
     setFormData(initialFormData);
     setShowModal(false);
   };
 
-  // Handle basic text input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // For color name change
   const handleColorNameChange = (index, value) => {
     setFormData((prev) => {
       const updatedColors = [...prev.colors];
@@ -79,14 +112,12 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
     });
   };
 
-  // Trigger hidden file input for a specific color
   const handleAddImageClick = (index) => {
     if (fileInputRefs.current[index]) {
       fileInputRefs.current[index].click();
     }
   };
 
-  // Validate each image as 450x450 and update color images
   const handleColorImageChange = async (colorIndex, files) => {
     if (!files || files.length === 0) return;
 
@@ -119,7 +150,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
     }
   };
 
-  // Remove a single file from a color's images
   const handleRemoveColorImage = (colorIndex, imageIndex) => {
     setFormData((prev) => {
       const updatedColors = [...prev.colors];
@@ -128,7 +158,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
     });
   };
 
-  // Add a new color row
   const addColor = () => {
     setFormData((prev) => ({
       ...prev,
@@ -136,7 +165,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
     }));
   };
 
-  // Remove a color row
   const removeColor = (index) => {
     setFormData((prev) => {
       const updatedColors = prev.colors.filter((_, i) => i !== index);
@@ -144,8 +172,8 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
     });
   };
 
-  // Handle form submit
   const handleSubmit = async (e) => {
+    console.log("Triggered");
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -166,12 +194,16 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
     });
 
     try {
-      if (productToEdit) {
-        await updateProduct(productToEdit.id, data);
+      if (productId || productToEdit) {
+        const updateId = productId || productToEdit.id;
+        await updateProduct(updateId, data);
       } else {
         await addProduct(data);
       }
-      handleClose(); // Reset form and close modal after submission
+      if (typeof onSuccess === "function") {
+        onSuccess();
+      }
+      handleClose();
     } catch (err) {
       console.error("Error submitting product:", err);
     } finally {
@@ -180,7 +212,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
   };
 
   if (!showModal) return null;
-
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg w-1/2 relative max-h-[80vh] overflow-y-auto">
@@ -198,7 +229,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
         </button>
 
         <h2 className="text-xl font-semibold mb-4">
-          {productToEdit ? "Edit Product" : "Add Product"}
+          {productId || productToEdit ? "Edit Product" : "Add Product"}
         </h2>
 
         <form onSubmit={handleSubmit}>
@@ -212,11 +243,15 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 className="w-full p-2 border border-gray-300 rounded"
               >
                 <option value="">Select Category</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
+                {Array.isArray(categories) && categories.length > 0 ? (
+                  categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No Categories Found</option>
+                )}
               </select>
             </div>
             {/* Product Name */}
@@ -287,20 +322,20 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 <option value="false">Inactive</option>
               </select>
             </div>
-            {/* Weight and Weight Unit */}
+            {/* Weight & Unit */}
             <div className="flex space-x-2">
               <input
                 type="number"
                 name="weight"
                 value={formData.weight}
                 onChange={handleChange}
-                placeholder="Product Weight"
+                placeholder="Weight"
                 className="w-1/2 p-2 border border-gray-300 rounded"
               />
               <input
                 type="text"
-                name="weightUnit"
-                value={formData.weightUnit}
+                name="unit"
+                value={formData.unit}
                 onChange={handleChange}
                 placeholder="Unit"
                 className="w-1/2 p-2 border border-gray-300 rounded"
@@ -320,8 +355,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 <option value="PKR">PKR</option>
               </select>
             </div>
-            <div></div> {/* Filler for 2-column layout */}
-            {/* Colors & Images Section (full width) */}
+            {/* Colors & Images Section */}
             <div className="col-span-2">
               <h3 className="font-semibold mb-2">
                 Product Images by Color (450×450 Only)
@@ -339,7 +373,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                       placeholder="Color Name (e.g. Red)"
                       className="w-1/3 p-2 border border-gray-300 rounded"
                     />
-                    {/* Add Image (Plus Icon) */}
+                    {/* Add Image */}
                     <button
                       type="button"
                       onClick={() => handleAddImageClick(index)}
@@ -347,7 +381,6 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                     >
                       + Add Image
                     </button>
-                    {/* Hidden File Input */}
                     <input
                       type="file"
                       multiple
@@ -358,7 +391,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                         handleColorImageChange(index, e.target.files)
                       }
                     />
-                    {/* Remove entire color */}
+                    {/* Remove Color */}
                     <button
                       type="button"
                       onClick={() => removeColor(index)}
@@ -367,31 +400,42 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                       Remove Color
                     </button>
                   </div>
-                  {/* Display the chosen images for this color */}
+
+                  {/* Display chosen images */}
                   {color.images && color.images.length > 0 && (
                     <div className="flex flex-wrap mt-2 gap-3">
-                      {color.images.map((file, imgIndex) => (
-                        <div
-                          key={imgIndex}
-                          className="border rounded p-2 flex items-center"
-                        >
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt="preview"
-                            className="w-16 h-16 object-cover mr-2"
-                          />
-                          <span className="mr-2 text-sm">{file.name}</span>
-                          <button
-                            type="button"
-                            className="text-red-600"
-                            onClick={() =>
-                              handleRemoveColorImage(index, imgIndex)
-                            }
+                      {color.images.map((file, imgIndex) => {
+                        const src =
+                          typeof file === "string"
+                            ? file
+                            : URL.createObjectURL(file);
+                        const fileName =
+                          typeof file === "string"
+                            ? file.split("/").pop()
+                            : file.name;
+                        return (
+                          <div
+                            key={imgIndex}
+                            className="border rounded p-2 flex items-center"
                           >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
+                            <img
+                              src={src}
+                              alt="preview"
+                              className="w-16 h-16 object-cover mr-2"
+                            />
+                            <span className="mr-2 text-sm">{fileName}</span>
+                            <button
+                              type="button"
+                              className="text-red-600"
+                              onClick={() =>
+                                handleRemoveColorImage(index, imgIndex)
+                              }
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -404,7 +448,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 + Add New Color
               </button>
             </div>
-            {/* Dimensions Section (full width) */}
+            {/* Dimensions */}
             <div className="col-span-2 mt-4">
               <h3 className="font-semibold mb-2">Dimensions</h3>
               <input
@@ -412,7 +456,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
                 name="dimensions"
                 value={formData.dimensions}
                 onChange={handleChange}
-                placeholder="Dimensions"
+                placeholder="Dimensions (e.g. 10x10x10)"
                 className="w-full p-2 border border-gray-300 rounded"
               />
             </div>
@@ -435,7 +479,7 @@ function ProductModal({ categories, showModal, setShowModal, productToEdit }) {
             >
               {isSubmitting
                 ? "Processing..."
-                : productToEdit
+                : productId || productToEdit
                 ? "Update Product"
                 : "Add Product"}
             </button>

@@ -153,4 +153,21 @@ export const Apis = {
     Request.delete(`/product/remove-similar-product/${id}`),
   getUnlinkedProducts: (id) =>
     Request.get(`/product/unlinked-feature-products/${id}`),
+  updateProduct: (id, data) =>
+    Request.put(`/product/${id}`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  addBanner: (data) =>
+    Request.post("/banners/add", data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+
+  getBanners: () => Request.get("/banners/get"),
+
+  updateBanner: (id, data) =>
+    Request.put(`/banners/update/${id}`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+
+  deleteBanner: (id) => Request.delete(`/banners/delete/${id}`),
 };

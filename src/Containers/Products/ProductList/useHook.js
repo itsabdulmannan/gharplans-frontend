@@ -85,8 +85,20 @@ export const useProducts = () => {
             console.error(error);
         }
     };
+    // A good version of updateProduct that ONLY updates:
+    const updateProduct = async (updateId, data) => {
+        try {
+            console.log("Updating product:", updateId, data);
+            const response = await Apis.updateProduct(updateId, data);
+            console.log(response)
+            // handle success / error or return response
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
-    return { getProducts, getCategories, updateProductStatus, deleteProduct, addProduct };
+
+    return { getProducts, getCategories, updateProductStatus, deleteProduct, addProduct, updateProduct };
 };
 
 export default useProducts;
